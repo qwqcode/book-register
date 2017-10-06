@@ -1,10 +1,16 @@
 $(document).ready(function(){
     updateAll();
+
+    // 不间断地测试 API 接口状态
+    setInterval(function () {
+        getStatus();
+        getTime();
+    }, 5000); // 5s once
 });
 
 function getTime() {
     var serverTimeDom = $('#ServerTime');
-    $.ajax({ url: './getTime', beforeSend: function(){
+    $.ajax({ url: '/getTime', beforeSend: function(){
         serverTimeDom.html('获取中...');
     }, success: function (data) {
         console.log(data);
@@ -19,7 +25,7 @@ function getTime() {
 function getCategories() {
     var categoryListDom = $('#CategoryList');
     var downloadGroup = $('#DownloadGroup');
-    $.ajax({ url: './getCategories', beforeSend: function(){
+    $.ajax({ url: '/getCategories', beforeSend: function(){
         categoryListDom.html('获取中...');
     }, success: function (data) {
         console.log(data);
@@ -62,7 +68,7 @@ function getCategories() {
 }
 
 function getGetBook(dom, categoryName) {
-    $.ajax({ url: './getCategoryBooks', data: {'categoryName': categoryName}, beforeSend: function(){
+    $.ajax({ url: '/getCategoryBooks', data: {'categoryName': categoryName}, beforeSend: function(){
         dom.html('获取中...');
     }, success: function (data) {
         console.log(data);
@@ -94,8 +100,45 @@ function showError(dom) {
 }
 
 function updateAll() {
+    getStatus();
     getTime();
     getCategories();
+}
+
+function getStatus() {
+    var statusList = $('#StatusList');
+
+    var reqInfoPool = [
+        ['GET', '/getCategories'],
+        ['GET', '/getCategoryBooks'],
+        ['POST', '/uploadCategoryBooks']
+    ];
+
+    for (var i = 0; i < reqInfoPool.length; i++) {
+
+        var method = reqInfoPool[i][0];
+        var url = reqInfoPool[i][1];
+
+        statusList.find('[data-path="'+url+'"]').remove();
+
+        (function() {
+            var dom = $('<li data-path="' + url + '">' + url + ' - <span class="status-tag" style="color: yellow">测试中...</span></li>')
+                .appendTo(statusList);
+
+            $.ajax({
+                url: url + '?getStatusOnly=true', method: method, data: {}, success: function (data) {
+                    if (data.hasOwnProperty('success')) {
+                        dom.find('.status-tag').css('color', 'green').html('正常');
+                    } else {
+                        dom.find('.status-tag').css('color', 'red').html('异常');
+                    }
+                }, error: function () {
+                    dom.find('.status-tag').css('color', 'red').html('异常');
+                }
+            });
+
+        } ());
+    }
 }
 
 function escapeCSV(input) {

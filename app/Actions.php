@@ -4,6 +4,7 @@ namespace App;
 use Illuminate\Database\Capsule\Manager;
 use Monolog\Logger;
 use Slim\App;
+use Slim\Exception\NotFoundException;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Views\PhpRenderer;
@@ -34,6 +35,7 @@ class Actions
         $this->app->get('/getCategories', [$this, 'getCategories']);
         $this->app->get('/getCategoryBooks', [$this, 'getCategoryBooks']);
         $this->app->post('/uploadCategoryBooks', [$this, 'uploadCategoryBooks']);
+        $this->app->get('/downloadExcel', [$this, 'downloadExcel']);
     }
     
     /**
@@ -220,7 +222,7 @@ class Actions
             if (!$category->exists()) {
                 $this->tableCategory()->insert([
                     'name' => $categoryName,
-                    'registrar_name' => $registrarName ?? "无名英雄",
+                    'registrar_name' => $registrarName,
                     'update_at' => 0,
                     'created_at' => $currentTime,
                 ]);
@@ -260,21 +262,123 @@ class Actions
     }
     
     /**
+     * 数据表格文件下载
+     *
+     * @inheritdoc
+     */
+    public function downloadExcel(Request $request, Response $response, $args) {
+        $categoryName = trim($request->getParam('categoryName'));
+        
+        if (empty($categoryName))
+            throw new NotFoundException($request, $response);
+        
+        // 准备数据
+        $categories = $this->tableCategory('`name` ASC');
+        $datetime =  date('YmdHis', time());
+        
+        if ($categoryName !== '__ALL') {
+            $categories = $categories->where(['name' => $categoryName]);
+            $fileName = '类目'.$categoryName.'的图书数据_' . $datetime;
+        } else {
+            $fileName = '所有类目的图书数据_' . $datetime;
+        }
+        
+        if (!$categories->exists())
+            throw new NotFoundException($request, $response);
+            
+        $categories = $categories->get();
+        $data = [];
+        $data[1] = []; // 表头占位
+    
+        $buildSingleCategoryData = function ($categoryData) {
+            $categoryName = $categoryData->name;
+            $categoryUpdateAt = intval($categoryData->update_at);
+            $registrarName = $categoryData->registrar_name ?? '';
+            
+            if (empty($categoryName) || empty($categoryUpdateAt))
+                return null;
+            
+            $book = $this->tableBook()->where([
+                'category_name' => $categoryData->name,
+                'created_at' => intval($categoryData->update_at)
+            ]);
+            
+            if (!$book->exists()) return null;
+            $book = $book->get()->first();
+            $booksJson = $book->category_book_data;
+            
+            if (empty($booksJson)) return null;
+            $booksArr = @json_decode($booksJson, true);
+            if (json_last_error() !== JSON_ERROR_NONE) return null;
+            
+            $booksArr = $this->handleBooks($booksArr);
+            if (empty($booksArr)) return null;
+            
+            $data = [];
+            foreach ($booksArr as $bookItem) {
+                $numbering = $bookItem['numbering'];
+                $numberingFull = $categoryName . ' ' . $numbering;
+                $data[] = [
+                    $categoryName, $numbering, $numberingFull,
+                    $bookItem['name'], $bookItem['press'], $bookItem['remarks'],
+                    $registrarName
+                ];
+            }
+            
+            return $data;
+        };
+    
+        foreach ($categories as $categoryItem) {
+            $itemData = $buildSingleCategoryData($categoryItem);
+            if (!empty($itemData)) {
+                foreach ($itemData as $item) {
+                    $data[] = $item;
+                }
+            }
+        }
+    
+        $objPHPExcel = new \PHPExcel();
+        $objPHPExcel->setActiveSheetIndex(0);
+    
+        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+        $data[1] = ['类目', '序号', '索引号', '书名', '出版社', '备注', '登记员'];
+        $width = [8, 8, 10, 25, 30, 20, 10];
+        foreach ($data as $rowNum => $item) {
+            foreach ($cols as $index => $colName) {
+                $objPHPExcel->getActiveSheet()->setCellValue($colName.$rowNum, $item[$index]);
+            }
+        }
+    
+        // 设置宽度
+        foreach ($cols as $index => $colName) {
+            $objPHPExcel->getActiveSheet()->getColumnDimension($colName)->setWidth($width[$index]);
+        }
+        
+        header('Content-Type: application/vnd.ms-excel;charset=UTF-8');
+        header('Content-Disposition: attachment;filename="'. $fileName .'.xls"');
+        header('Cache-Control: max-age=0');
+        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+        $objWriter->save('php://output');
+    }
+    
+    /**
      * 数据表 - 类目
      *
+     * @param $orderBy
      * @return \Illuminate\Database\Query\Builder
      */
-    private function tableCategory() {
-        return $this->db->table('category')->orderByDesc('created_at');
+    private function tableCategory($orderBy = '`created_at` DESC') {
+        return $this->db->table('category')->orderByRaw($orderBy);
     }
     
     /**
      * 数据表 - 类目中的图书
      *
+     * @param $orderBy
      * @return \Illuminate\Database\Query\Builder
      */
-    private function tableBook() {
-        return $this->db->table('book')->orderByDesc('created_at');
+    private function tableBook($orderBy = '`created_at` DESC') {
+        return $this->db->table('book')->orderByRaw($orderBy);
     }
     
     /**

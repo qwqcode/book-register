@@ -5,58 +5,21 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 	<meta name="renderer" content="webkit" />
     <title>LIBRARY REGISTER</title>
-    <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
-    <script>
-    window.getCategories = function () {
-        var categoryListDom = $('#CategoryList');
-        $.ajax({ url: './getCategories', success: function (data) {
-            console.log(data);
-            if (!!data['success']) {
-                categoryListDom.html('');
-                var categoriesData = data['data'];
-                for (var i in categoriesData) {
-                    var item = categoriesData[i];
-                    $(  '<li onclick="getGetBook(\''+ item['name'] +'\')">'
-                        + item['name']
-                        + ' ('
-                        + '负责人 = ' + item['registrar_name'] + ', '
-                        + '最后更新 = ' + item['update_at_format'] + ', '
-                        + '创建于 = ' + item['created_at_format']
-                        + ')'
-                        + '</li>'
-                    ).appendTo(categoryListDom);
-                }
-            }
-        }, error: function () {
-            categoryListDom.html('<a style="color: red">API 异常，请在浏览器控制台查看详情</a>');
-        } });
-    };
-
-    window.getGetBook = function (categoryName) {
-        var queryResultDom = $('#QueryResult');
-        $.ajax({ url: './get-book', data: {'category_name': categoryName}, success: function (data) {
-            console.log(data);
-            if (!!data['success']) {
-                queryResultDom.html('<p>类目：' + categoryName + '</p><code>' + JSON.stringify(data['data']) + '</code>');
-            }
-        }, error: function () {
-            queryResultDom.html('<a style="color: red">API 异常，请在浏览器控制台查看详情</a>');
-        } });
-    };
-    
-    $(document).ready(function(){
-        getCategories();
-    });
-    </script>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/library-register-server.js"></script>
 </head>
 <body>
+    <h2>Control</h2>
+    <button onclick="updateAll();">Update All</button>
+    <h2>Server Time</h2>
+    <code id="ServerTime"></code>
     <h2>Categories</h2>
-    <ul id="CategoryList">加载中...</ul>
-    <h2>Actions</h2>
+    <ul id="CategoryList"></ul>
+    <h2>Downloads</h2>
     <ul>
-        <li><a href="./download-excel">构建全部图书电子表格文档并下载</a></li>
+        <b>最新进度 电子表格</b>
+        <li><a href="/downloadExcel?categoryName=__ALL">下载 全部类目 电子表格</a></li>
+        <span id="DownloadGroup"></span>
     </ul>
-    <h2>Query Result</h2>
-    <div id="QueryResult"></div>
 </body>
 </html>

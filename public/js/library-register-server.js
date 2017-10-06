@@ -1,4 +1,8 @@
-window.getTime = function () {
+$(document).ready(function(){
+    updateAll();
+});
+
+function getTime() {
     var serverTimeDom = $('#ServerTime');
     $.ajax({ url: './getTime', beforeSend: function(){
         serverTimeDom.html('获取中...');
@@ -10,9 +14,9 @@ window.getTime = function () {
     }, error: function () {
         showError(serverTimeDom);
     } });
-};
+}
 
-window.getCategories = function () {
+function getCategories() {
     var categoryListDom = $('#CategoryList');
     var downloadGroup = $('#DownloadGroup');
     $.ajax({ url: './getCategories', beforeSend: function(){
@@ -33,12 +37,17 @@ window.getCategories = function () {
                     '最后更新 = ' + item['update_at_format'] + ', ' +
                     '创建于 = ' + item['created_at_format'] +
                     ')' +
+                    '<div id="CategoryContent" style="margin-top: 10px;height: 300px;width: 650px;' +
+                    'overflow-y: scroll;padding: 10px;border: 1px solid #dedede;word-break: break-all"></div>' +
                     '<hr/></li>'
                 );
                 itemDom.find('#CategoryName').click(function () {
-                    getGetBook($(this).text());
+                    getGetBook($(this).parents('li').find('#CategoryContent'),
+                        $(this).text());
                 });
                 itemDom.appendTo(categoryListDom);
+
+                getGetBook(itemDom.find('#CategoryContent'), item['name']);
 
                 // downloads
                 $('<li><a href="downloadExcel?categoryName=' +
@@ -50,29 +59,56 @@ window.getCategories = function () {
     }, error: function () {
         showError(categoryListDom);
     } });
-};
+}
 
-window.getGetBook = function (categoryName) {
-    var queryResultDom = $('#QueryResult');
-    $.ajax({ url: './get-book', data: {'category_name': categoryName}, success: function (data) {
+function getGetBook(dom, categoryName) {
+    $.ajax({ url: './getCategoryBooks', data: {'categoryName': categoryName}, beforeSend: function(){
+        dom.html('获取中...');
+    }, success: function (data) {
         console.log(data);
         if (!!data['success']) {
-            queryResultDom.html('<p>类目：' + categoryName + '</p><code>' + JSON.stringify(data['data']) + '</code>');
+            var books = data['data']['books'];
+            var csvContent = '';
+            var csvHeadRow = '';
+            for (var i in books) {
+                var row = '';
+                var bookItem = books[i];
+                var tableHeadRow = '';
+                for (var key in bookItem) {
+                    tableHeadRow += escapeCSV(key) + ',';
+                    row += escapeCSV(bookItem[key]) + ',';
+                }
+                if (csvHeadRow.length < 1)
+                    csvHeadRow = tableHeadRow.substring(0, tableHeadRow.length - 1) + '<br/>';
+                csvContent += row.substring(0, row.length - 1) + '<br/>';
+            }
+            dom.html(csvHeadRow + csvContent);
         }
     }, error: function () {
-        showError(queryResultDom);
+        showError(dom);
     } });
-};
+}
 
-window.showError = function (dom) {
+function showError(dom) {
     dom.html('<a style="color: red">API 异常，请在浏览器控制台查看详情</a>');
-};
+}
 
-$(document).ready(function(){
-    updateAll();
-});
-
-window.updateAll = function () {
+function updateAll() {
     getTime();
     getCategories();
-};
+}
+
+function escapeCSV(input) {
+    if (input.length < 1)
+        return '""';
+
+    var csv = String(input).replace(/"/g,'""');
+
+    if(csv.charAt(0) != '"')
+        csv = '"' + csv;
+
+    if(csv.charAt(csv.length-1) != '"')
+        csv = csv + '"';
+
+    return csv;
+}

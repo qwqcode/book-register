@@ -115,7 +115,7 @@ class Actions
         if (empty($dataCatedAt))
             return $this->resultFalse($response, '该类目暂未图书数据');
         
-        $book = $this->tableBook()->where(['created_at' => $dataCatedAt]);
+        $book = $this->tableBook()->where(['category_name' => $categoryName, 'created_at' => $dataCatedAt]);
         if (!$book->exists())
             return $this->resultFalse($response, '该类目在 ' . date('Y-m-d H:i:s', $dataCatedAt) . ' 保存的图书数据未找到');
         $book = $book->get()->first();

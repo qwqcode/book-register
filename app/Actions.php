@@ -89,22 +89,24 @@ class Actions
             // 参数：With Books
             if (!!$withBooks) {
                 // 查询 Book Table
-                if (empty($item->update_at))
-                    return $this->resultFalse($response, '该类目暂未图书数据');
+                $data[$num]['books'] = (function ($item) {
+                    if (empty($item->update_at))
+                        return [];
     
-                $book = $this->tableBook()->where(['category_name' => $item->name, 'created_at' => $item->update_at]);
-                if (!$book->exists())
-                    return $this->resultFalse($response, '该类目在 ' . date('Y-m-d H:i:s', $item->update_at) . ' 保存的图书数据未找到');
-                $book = $book->get()->first();
+                    $book = $this->tableBook()->where(['category_name' => $item->name, 'created_at' => $item->update_at]);
+                    if (!$book->exists())
+                        return [];
+                    $book = $book->get()->first();
     
-                // 处理 Books
-                $booksJson = $book->category_book_data;
-                $booksArr = @json_decode($booksJson, true);
-                if (json_last_error() !== JSON_ERROR_NONE)
-                    return $this->resultFalse($response, '该类目图书数据解析错误 ' . json_last_error_msg());
+                    // 处理 Books
+                    $booksJson = $book->category_book_data;
+                    $booksArr = @json_decode($booksJson, true);
+                    if (json_last_error() !== JSON_ERROR_NONE)
+                        return [];
     
-                $booksData = $this->handleBooks($booksArr);
-                $data[$num]['books'] = $booksData;
+                    $booksData = $this->handleBooks($booksArr);
+                    return $booksData;
+                })($item);
             }
         }
         

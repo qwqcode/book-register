@@ -32,7 +32,9 @@
     },
     "scripts": {
         "start": "php -S localhost:8080 -t public public/index.php",
-        "test": "phpunit"
+        "test": "phpunit",
+		"post-root-package-install": [
+            "php -r \"copy('database-config.example.php', 'database-config.php');\""
+        ]
     }
-
 }

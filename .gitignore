@@ -1,3 +1,5 @@
 /vendor/
 /logs/*
 !/logs/README.md
+/.idea
+/database-config.php

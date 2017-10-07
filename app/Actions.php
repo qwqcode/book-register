@@ -73,6 +73,7 @@ class Actions
     public function getCategories(Request $request, Response $response, $args)
     {
         $categoriesTable = $this->tableCategory();
+        $withBooks = $request->getParam('withBooks');
         
         $data = [];
         
@@ -84,6 +85,27 @@ class Actions
             // 附加
             $data[$num]['update_at_format'] = date('Y-m-d H:i:s', $item->update_at);
             $data[$num]['created_at_format'] = date('Y-m-d H:i:s', $item->created_at);
+            
+            // 参数：With Books
+            if (!!$withBooks) {
+                // 查询 Book Table
+                if (empty($item->update_at))
+                    return $this->resultFalse($response, '该类目暂未图书数据');
+    
+                $book = $this->tableBook()->where(['category_name' => $item->name, 'created_at' => $item->update_at]);
+                if (!$book->exists())
+                    return $this->resultFalse($response, '该类目在 ' . date('Y-m-d H:i:s', $item->update_at) . ' 保存的图书数据未找到');
+                $book = $book->get()->first();
+    
+                // 处理 Books
+                $booksJson = $book->category_book_data;
+                $booksArr = @json_decode($booksJson, true);
+                if (json_last_error() !== JSON_ERROR_NONE)
+                    return $this->resultFalse($response, '该类目图书数据解析错误 ' . json_last_error_msg());
+    
+                $booksData = $this->handleBooks($booksArr);
+                $data[$num]['books'] = $booksData;
+            }
         }
         
         return $this->resultTrue($response, '类目数据获取成功', [

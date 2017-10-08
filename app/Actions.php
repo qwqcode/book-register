@@ -137,7 +137,7 @@ class Actions
         // 查询 Book Table
         $dataCatedAt = intval($category->update_at);
         if (empty($dataCatedAt))
-            return $this->resultFalse($response, '该类目暂未图书数据');
+            return $this->resultFalse($response, '该类目暂无图书数据');
         
         $book = $this->tableBook()->where(['category_name' => $categoryName, 'created_at' => $dataCatedAt]);
         if (!$book->exists())

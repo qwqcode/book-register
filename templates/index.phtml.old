@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="renderer" content="webkit" />
+    <title>LIBRARY REGISTER SERVER</title>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/library-register-server.js"></script>
+</head>
+<body>
+    <h2>LIBRARY REGISTER SERVER</h2>
+    <p>Author: <a href="https://github.com/Zneiat" target="_blank">ZNEIAT</a><br/>Project-Name: zneiat/library-register-server<br/>Powered-By: PHP, slim/slim
+</p>
+    <button onclick="updateAll();">Update All</button>
+    <h2>Status</h2>
+    <ul id="StatusList"></ul>
+    <h2>Server Time</h2>
+    <code id="ServerTime"></code>
+    <h2>Downloads</h2>
+    <ul>
+        <b>最新进度 电子表格</b>
+        <li><a href="/downloadExcel?categoryName=__ALL">下载 全部类目 电子表格</a></li>
+        <span id="DownloadGroup"></span>
+    </ul>
+    <h2>Categories Test</h2>
+    <ul id="CategoryList"></ul>
+</body>
+</html>

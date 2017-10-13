@@ -9,17 +9,28 @@ body {
 
 /* hello-screen */
 .hello-screen {
-    padding: 50px;
     width: 500px;
+    height: 300px;
     margin: 0 auto;
+    margin-top: calc((100vh - 400px) / 2);
+    background: #FFF;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.075);
 }
 
 .hello-screen .big-title-text {
+    font-size: 30px;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #7186ad;
+    border-bottom: 1px solid #F4F4F4;
+    padding: 28px 40px;
+    text-align: center;
 }
 
 .hello-form {
     overflow: hidden;
-    margin-top: 35px;
+    padding: 25px 40px;
 }
 
 .hello-form .input-hint {
@@ -32,7 +43,13 @@ body {
 .hello-form .form-control {
     box-shadow: none !important;
     outline: none !important;
-    border-radius: 1px;
+    border-radius: 2px;
+    border: 1px solid #d0d0d0;
+    background: #fdfdfd;
+}
+
+.hello-form .form-control:focus {
+    border: 1px solid #2196f3;
 }
 
 .hello-form-submit {
@@ -48,15 +65,22 @@ body {
     cursor: pointer;
     -webkit-transition: all .2s ease-in-out;
     transition: all .2s ease-in-out;
-    border-radius: 1px;
+    border-radius: 2px;
     outline: none;
 }
 
-.hello-form-submit:focus {
+.hello-form-submit:focus,
+.hello-form-submit:hover {
     background: #2feab7;
 }
 
 /* floaters */
+.work-area {}
+
+.work-area .work-table {
+    padding: 6px;
+}
+
 .work-area .floaters {
     z-index: 111;
     position: fixed;

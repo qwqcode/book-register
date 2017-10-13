@@ -22,9 +22,15 @@ var app = {
         init: function () {
             this.dom = $('#helloScreen');
             this.formDom = $('#helloForm');
+            this.formDom.find('#yourName').focus(function () {
+                $(this).attr('placeholder', '我的 Name 是达康，我要当书记.');
+            }).blur(function () {
+                $(this).attr('placeholder', 'Your Name ? 填入你的真实名字.');
+            });
             this.formDom.submit(function () {
                 var yourName = $(this).find('#yourName');
-                if ($.trim(yourName.val()).length < 1) {
+                var yourNameVal = $.trim(yourName.val());
+                if (yourNameVal.length < 1) {
                     alert('请填入你的姓名');
                     return false;
                 }
@@ -109,6 +115,11 @@ var app = {
         init: function () {
             this.dom = $('#workArea');
             this.workTableDom = $('#workTable');
+            $('.floater-block').mouseover(function () {
+                $(this).removeClass('block-hide');
+            }).mouseout(function () {
+                $(this).addClass('block-hide');
+            })
         },
         startWork: function () {
             app.helloScreen.dom.hide();
@@ -129,7 +140,7 @@ var app = {
                 filters: true,
                 // dropdownMenu: true,
                 contextMenu: ['cut', 'copy', 'paste', 'undo', 'redo'],
-                minSpareRows: 30,
+                minSpareRows: 1000,
                 manualColumnResize: true,
                 manualRowResize: true,
                 stretchH: 'all',
@@ -141,7 +152,7 @@ var app = {
                 },
                 columns: [
                     {data: 'category', readOnly: true},
-                    {data: 'code', readOnly: true},
+                    {data: 'numbering', readOnly: true},
                     {data: 'name'},
                     {data: 'press'},
                     {data: 'remarks'}
@@ -163,7 +174,7 @@ var app = {
                     var tableData = [];
                     for (var i in books) {
                         var bookItem = books[i];
-                        tableData.push({ category: categoryName, code: bookItem['numbering'],
+                        tableData.push({ category: categoryName, numbering: bookItem['numbering'],
                             name: bookItem['name'], press: bookItem['press'], remarks: bookItem['remarks']});
                     }
                     app.work.hot.loadData(tableData);
@@ -171,12 +182,6 @@ var app = {
             }, error: function () {
                 alert('类目数据加载错误...');
             } });
-
-            $('.floater-block').mouseover(function () {
-                $(this).removeClass('block-hide');
-            }).mouseout(function () {
-                $(this).addClass('block-hide');
-            })
         },
         saveCurrent: function () {
 

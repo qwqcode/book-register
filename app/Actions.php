@@ -175,7 +175,7 @@ class Actions
         $handleData = [];
         $numbering = function () use ($booksArr) {
             // 获取最大的 numbering
-            $maxNumbering = 0;
+            $maxNumbering = 1;
             foreach ($booksArr as $item) {
                 $numbering = intval($item['numbering'] ?? 0);
                 if ($numbering > $maxNumbering

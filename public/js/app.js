@@ -16,6 +16,7 @@ app.data = {
 app.current = {
     registrarName: null,
     categoryDataIndex: null,
+    categoryName: null,
     categoryIsSaved: false
 };
 
@@ -179,6 +180,7 @@ app.category = {
             }
 
             app.current.categoryDataIndex = categoryDataIndex;
+            app.current.categoryName = categoryName;
             // 正式开始工作
             app.work.startWork();
         }, function () {
@@ -307,13 +309,12 @@ app.work = {
         })
     },
     startWork: function () {
-        var categoryDataIndex = app.current.categoryDataIndex;
-        var categoryData = app.data.categoris[categoryDataIndex];
-        var categoryBooks = app.data.categoryBooks[categoryData['name']];
+        var categoryName = app.current.categoryName;
+        var categoryBooks = app.data.categoryBooks[categoryName];
         app.helloScreen.hide();
         app.work.dom.show();
         app.work.newTable();
-        app.work.hot.loadData(categoryBooks);
+        app.work.hot.loadData(this.handleBooksTableUse(categoryName, categoryBooks));
     },
     newTable: function () {
         if (this.hot !== null) {
@@ -370,30 +371,97 @@ app.work = {
         });
 
         Handsontable.hooks.add('afterSetDataAtCell', function (changes, source) {
-            // 当编辑了最后一行的数据
+            // 当编辑了最后一行
             if (changes[0][0] + 1 >= app.work.hot.getData().length) {
                 // 创建新行
-
+                var categoryName = app.data.categoris[app.current.categoryDataIndex]['name'];
+                var dataLastNumbering = app.work.hot.getData().length + 1;
+                var data = app.work.hot.getSourceData();
+                // 创建新 500 行
+                for (var i = 1; i <= 500; i++) {
+                    var numbering = dataLastNumbering + i;
+                    data.push({
+                        category: categoryName,
+                        numbering: numbering,
+                        name: '',
+                        press: '',
+                        remarks: ''
+                    });
+                }
+                app.work.hot.render();
             }
         });
     },
-    handleBooksTableUse: function (booksData) {
-        var total = booksData.length() + 500; // 预留 500 个空行
-        var data = [];
-        for (var i = 0; i < booksData; i++) {
-            for (var itemBooks in booksData) {
-                if (booksData['numbering']) {
+    handleBooksTableUse: function (categoryName, booksData) {
+        if (!booksData || typeof(booksData) !== 'object') {
+            return [];
+        }
 
+        var total = booksData.length + 500; // 预留 500 个空行
+        var data = [];
+        for (var i = 0; i < total; i++) {
+            var numbering = String(i + 1);
+            data[i] = {
+                category: categoryName,
+                numbering: numbering,
+                name: '',
+                press: '',
+                remarks: ''
+            };
+
+            // 搜寻是否有当前 numbering 的图书数据
+            for (var bookItemIndex in booksData) {
+                var bookItem = booksData[bookItemIndex];
+                if (String(bookItem['numbering']) === numbering) {
+                    data[i]['name'] = String(bookItem['name']||'');
+                    data[i]['press'] = String(bookItem['press']||'');
+                    data[i]['remarks'] = String(bookItem['remarks']||'');
+                    break;
                 }
             }
-            app.work.hot.setDataAtCell(187, 0, '2');
         }
-    },
-    handleBooksUploadUse: function (booksData) {
 
+        return data;
+    },
+    handleTableDataUploadUse: function (tableData) {
+        if (!tableData || typeof(tableData) !== 'object') {
+            return [];
+        }
+
+        var data = [];
+
+        var maxNumbering = 1;
+        for (var i in tableData) {
+            var item = tableData[i];
+            var numbering = Number(item['numbering']);
+            if (numbering > maxNumbering
+                && ($.trim(item['name']).length > 0 || $.trim(item['press']).length > 0 || $.trim(item['remarks']).length > 0))
+                maxNumbering = numbering;
+        }
+
+        for (var i = 0; i <= maxNumbering - 1; i++) {
+            var bookItem = tableData[i];
+            data[i] = {
+                numbering: bookItem['numbering'],
+                name: bookItem['name'],
+                press: bookItem['press'],
+                remarks: bookItem['remarks']
+            };
+        }
+        return data;
     },
     saveCurrent: function () {
+        if (this.hot === null) {
+            app.notify.warning('Handsontable 还未实例化');
+            return;
+        }
 
+        app.work.hot.deselectCell();
+        var tableData = this.hot.getSourceData();
+        var updateData = this.handleTableDataUploadUse(tableData);
+        app.category.uploadData(app.current.categoryName, updateData, function () {
+
+        });
     }
 };
 

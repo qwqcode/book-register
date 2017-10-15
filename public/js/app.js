@@ -328,7 +328,7 @@ app.work = {
             filters: true,
             // dropdownMenu: true,
             contextMenu: ['cut', 'copy', 'paste', 'undo', 'redo'],
-            minSpareRows: 500,
+            //minSpareRows: 500,
             manualColumnResize: true,
             manualRowResize: true,
             stretchH: 'all',
@@ -357,6 +357,40 @@ app.work = {
                 }
             }
         });
+
+        var tableHeightFit = function () {
+            app.work.hot.updateSettings({
+                height: app.work.dom.innerHeight()
+            });
+        };
+
+        tableHeightFit();
+        $(window).resize(function () {
+            tableHeightFit();
+        });
+
+        Handsontable.hooks.add('afterSetDataAtCell', function (changes, source) {
+            // 当编辑了最后一行的数据
+            if (changes[0][0] + 1 >= app.work.hot.getData().length) {
+                // 创建新行
+
+            }
+        });
+    },
+    handleBooksTableUse: function (booksData) {
+        var total = booksData.length() + 500; // 预留 500 个空行
+        var data = [];
+        for (var i = 0; i < booksData; i++) {
+            for (var itemBooks in booksData) {
+                if (booksData['numbering']) {
+
+                }
+            }
+            app.work.hot.setDataAtCell(187, 0, '2');
+        }
+    },
+    handleBooksUploadUse: function (booksData) {
+
     },
     saveCurrent: function () {
 

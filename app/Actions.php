@@ -178,7 +178,8 @@ class Actions
             $maxNumbering = 0;
             foreach ($booksArr as $item) {
                 $numbering = intval($item['numbering'] ?? 0);
-                if ($numbering > $maxNumbering)
+                if ($numbering > $maxNumbering
+                    && (!empty($item['name']) || !empty($item['press'] || !empty($item['remarks']))))
                     $maxNumbering = $numbering;
             }
             return $maxNumbering;

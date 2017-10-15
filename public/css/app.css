@@ -320,6 +320,7 @@ body {
 
 .work-area .work-table {
     padding-right: 4px;
+    height: 100vh;
 }
 
 .work-area .floaters {

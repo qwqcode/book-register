@@ -61,17 +61,24 @@ body {
 }
 
 /* hello-screen */
+.hello-screen-wrap {
+    display: flex;
+    align-items: center;
+    justify-items: center;
+    height: 100vh;
+    width: 100%;
+}
+
 .hello-screen {
     position: relative;
     width: 500px;
     height: 300px;
-    margin: 0 auto;
-    margin-top: calc((100vh - 600px) / 2);
     background: #2196f3;
     border-radius: 3px;
     box-shadow: 0 1px 2px rgba(0,0,0,.075);
     overflow: hidden;
     transition: width 0.15s ease-in-out, height 0.15s ease-in-out;
+    margin: 0 auto;
 }
 
 .hello-screen.large-size {
@@ -283,11 +290,20 @@ body {
 }
 
 .category-list .list-content .item .item-head {
-    color: #2196f3;
     font-size: 18px;
 }
 
-.category-list .list-content .item .item-head .category-name {}
+.category-list .list-content .item .item-head .category-name {
+    color: #2196f3;
+}
+
+.category-list .list-content .item .item-head .category-name.is-mine:before {
+    content: '\f27d';
+    font: normal normal normal 14px/1 'Material-Design-Iconic-Font';
+    display: inline-block;
+    margin-right: 7px;
+    color: #FFB300;
+}
 
 .category-list .list-content .item .item-desc {
     margin-top: 10px;
@@ -326,9 +342,39 @@ body {
 .work-area .floaters {
     z-index: 111;
     position: fixed;
-    right: 15px;
+    right: 40px;
     bottom: 40px;
     display: flex;
+}
+
+.work-area .floaters .work-actions {
+}
+
+.work-area .floaters .work-actions .action-item {
+    display: inline-block;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.work-area .floaters .work-actions .action-item:not(:last-child) {
+    margin-right: 1px;
+}
+
+.work-area .floaters .work-actions .action-item:hover {
+    color: #2196f3;
+    border: 1px solid #2196f3;
+}
+
+.work-area .floaters .work-actions .action-item:active {
+    color: #2feab7;
+    border: 1px solid #2feab7;
+}
+
+.work-area .floaters .work-actions .action-item > i {
+    margin-right: 5px;
 }
 
 .work-area .floater-block {

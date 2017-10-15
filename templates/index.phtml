@@ -12,35 +12,39 @@
     <link href="/css/material-design-iconic-font.min.css" rel="stylesheet">
     <link href="/handsontable/handsontable.full.css" rel="stylesheet" media="screen">
     <script src="/js/jquery.min.js"></script>
-    <script src="/handsontable/handsontable.full.js"></script>
     <script src="/js/app.js"></script>
 </head>
 <body>
     <!-- HelloScreen -->
-    <div class="hello-screen" id="helloScreen">
-        <div class="hello-head" id="helloHead">
-            <div class="big-title">
-                <span style="color: #2196f3;margin-right: 13px;">書記</span><span style="font-size: 13px">Online</span>
+    <div class="hello-screen-wrap">
+        <div class="hello-screen" id="helloScreen">
+            <div class="hello-head" id="helloHead">
+                <div class="big-title">
+                    <span style="color: #2196f3;margin-right: 13px;">書記</span><span style="font-size: 13px">Online</span>
+                </div>
+                <div class="right-part" style="display: none">
+                    <span class="your-name"><i class="zmdi zmdi-account"></i><span id="registrarName"></span></span>
+                </div>
             </div>
-            <div class="right-part" style="display: none">
-                <span class="your-name"><i class="zmdi zmdi-account"></i><span id="registrarName"></span></span>
-            </div>
+            <form class="hello-form" id="helloForm" onsubmit="return false;">
+                <p class="input-hint">填入你的名字，成为一名名副其实的图书登记员吧！</p>
+                <input type="text" id="yourName" class="form-control" placeholder="Your Name ? 填入你的真实名字." autofocus autocomplete="off" />
+                <button class="hello-form-submit">好的</button>
+            </form>
+            <div class="hello-category-list-wrap" id="helloCategorySelectorWrap"></div>
         </div>
-        <form class="hello-form" id="helloForm" onsubmit="return false;">
-            <p class="input-hint">填入你的名字，成为一名名副其实的图书登记员吧！</p>
-            <input type="text" id="yourName" class="form-control" placeholder="Your Name ? 填入你的真实名字." autofocus autocomplete="off" />
-            <button class="hello-form-submit">好的</button>
-        </form>
-        <div class="hello-category-list-wrap" id="helloCategorySelectorWrap"></div>
     </div>
     <!-- WorkArea -->
     <div class="work-area" id="workArea" style="display: none">
         <div class="work-table" id="workTable"></div>
         <div class="floaters">
-            <div class="floater-block block-hide">
-                <button onclick="app.work.saveCurrent();">保存</button>
+            <div class="work-actions">
+                <span class="action-item" onclick="app.work.saveCurrent()"><i class="zmdi zmdi-save"></i> 保存</span>
+                <span class="action-item" onclick="app.work.exitWork()"><i class="zmdi zmdi-arrow-back"></i> 离开</span>
             </div>
         </div>
     </div>
+    
+    <script src="/handsontable/handsontable.full.js"></script>
 </body>
 </html>

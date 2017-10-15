@@ -1,5 +1,6 @@
 /* Zneiat/library-register-server */
 $(document).ready(function () {
+    appUtils.checkLocalTime();
     app.helloScreen.init();
     app.category.init();
     app.work.init();
@@ -194,8 +195,10 @@ app.category = {
         }
     },
     categoriesDownload: function (onSuccess, onError) {
-        onSuccess = onSuccess || function () {};
-        onError = onError || function () {};
+        onSuccess = onSuccess || function () {
+        };
+        onError = onError || function () {
+        };
 
         $.ajax({
             url: '/getCategories', success: function (data) {
@@ -217,8 +220,10 @@ app.category = {
         });
     },
     booksDownload: function (categoryData, onSuccess, onError) {
-        onSuccess = onSuccess || function () {};
-        onError = onError || function () {};
+        onSuccess = onSuccess || function () {
+        };
+        onError = onError || function () {
+        };
 
         $.ajax({
             url: '/getCategoryBooks', data: {'categoryName': categoryData['name']}, beforeSend: function () {
@@ -264,8 +269,10 @@ app.category = {
         });
     },
     uploadData: function (categoryName, categoryBooksArr, onSuccess, onError) {
-        onSuccess = onSuccess || function () {};
-        onError = onError || function () {};
+        onSuccess = onSuccess || function () {
+        };
+        onError = onError || function () {
+        };
 
         var data = {};
         data[categoryName] = categoryBooksArr;
@@ -413,9 +420,9 @@ app.work = {
             for (var bookItemIndex in booksData) {
                 var bookItem = booksData[bookItemIndex];
                 if (String(bookItem['numbering']) === numbering) {
-                    data[i]['name'] = String(bookItem['name']||'');
-                    data[i]['press'] = String(bookItem['press']||'');
-                    data[i]['remarks'] = String(bookItem['remarks']||'');
+                    data[i]['name'] = String(bookItem['name'] || '');
+                    data[i]['press'] = String(bookItem['press'] || '');
+                    data[i]['remarks'] = String(bookItem['remarks'] || '');
                     break;
                 }
             }
@@ -480,6 +487,8 @@ app.notify = {
     },
     // level: s, e, i, w
     show: function (message, level, timeout) {
+        console.log('[app.notify][' + level + '][' + new Date().toLocaleString() + '] ' + message);
+
         timeout = (timeout !== undefined && typeof timeout === 'number') ? timeout : 2000;
 
         var layerDom = $('.notify-layer');
@@ -551,6 +560,29 @@ var appUtils = {
             var dateObj = new Date(parseInt(date) * 1000);
             return dateObj.getFullYear() + "/" + (dateObj.getMonth() + 1) + "/" + dateObj.getDate();
         }
+    },
+    checkLocalTime: function () {
+        $.ajax({ url: '/getTime', beforeSend: function(){
+
+        }, success: function (data) {
+            if (!!data['success']) {
+                var serverTime = data['data']['time'];
+                var serverTimeFormat = data['data']['time_format'];
+                console.log('服务器当前时间：' + serverTimeFormat);
+                // 获取 js 时间戳
+                var time = new Date().getTime();
+                // 去掉 js 时间戳后三位，与 php 时间戳保持一致
+                time = parseInt((time - serverTime * 1000) / 1000);
+                // 若时差超过3小时
+                if (Math.floor(time / 60 / 60) >= 1 || Math.floor(time / 60 / 60) <= -1) {
+                    app.notify.warning('当前本地时间快了 ' + Math.floor(time / 60 / 60) + ' 小时，请调整本地时间为 ' + serverTimeFormat)
+                }
+            } else {
+                app.notify.warning('服务器当前时间戳获取失败')
+            }
+        }, error: function () {
+            app.notify.warning('网络错误，服务器当前时间戳获取失败')
+        } });
     },
     htmlEncode: function (value) {
         var div = document.createElement('div');

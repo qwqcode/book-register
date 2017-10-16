@@ -10,13 +10,23 @@
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/app.css" rel="stylesheet">
     <link href="/css/material-design-iconic-font.min.css" rel="stylesheet">
-    <link href="/handsontable/handsontable.full.css" rel="stylesheet" media="screen">
+    <link href="/js/handsontable/handsontable.full.css" rel="stylesheet" media="screen">
     <script src="/js/jquery.min.js"></script>
     <script src="/js/app.js"></script>
+    <!--[if lt IE 9]>你正在使用的浏览器版本过低，请<a href="/upgrade-browser.html"><strong>升级你的浏览器</strong></a>，获得最佳的浏览体验！<![endif]-->
 </head>
 <body>
+    <!-- PageLoaderLayer -->
+    <div class="page-loader-layer anim-fade-out" id="pageLoaderLayer">
+        <div class="page-loader-spinner">
+            <svg viewBox="25 25 50 50">
+                <circle cx="50" cy="50" r="20" fill="none" stroke-width="2" stroke-miterlimit="10"></circle>
+            </svg>
+        </div>
+        <div class="loading-text"></div>
+    </div>
     <!-- HelloScreen -->
-    <div class="hello-screen-wrap">
+    <div class="hello-screen-wrap" style="display: none">
         <div class="hello-screen" id="helloScreen">
             <div class="hello-head" id="helloHead">
                 <div class="big-title">
@@ -45,6 +55,6 @@
         </div>
     </div>
     
-    <script src="/handsontable/handsontable.full.js"></script>
+    <script src="/js/handsontable/handsontable.full.js"></script>
 </body>
 </html>

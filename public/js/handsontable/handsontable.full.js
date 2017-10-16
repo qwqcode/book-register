@@ -39622,6 +39622,15 @@ function EditorManager(instance, priv, selection) {
     } else {
       activeEditor = void 0;
     }
+
+    /*if (activeEditor) {
+      instance._registerTimeout(setTimeout(function() {
+        activeEditor.textareaParentStyle.button = '-9999px';
+        activeEditor.textareaParentStyle.left = '-9999px';
+        activeEditor.textareaParentStyle.display = 'block';
+        activeEditor.TEXTAREA.focus();
+      }, 100));
+    }*/
   };
 
   /**

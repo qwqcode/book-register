@@ -345,7 +345,6 @@ a {
 }
 
 .work-area .work-table {
-    padding-right: 4px;
     height: 100vh;
 }
 
@@ -507,11 +506,11 @@ a {
     padding: 10px 30px 10px 30px;
     font-size: 13px;
     font-weight: 400;
-    line-height: 1.5;
+    line-height: 2.1;
     color: #707070;
     overflow-x: hidden;
     overflow-y: auto;
-    max-height: 150px;
+    max-height: 200px;
     word-break: break-all;
 }
 
@@ -557,6 +556,11 @@ a {
     display: flex
 }
 
+.page-loader-layer .loading-text {
+    display: flex;
+    margin-left: 40px;
+}
+
 .page-loader-spinner {
     position: relative;
     width: 50px;
@@ -570,7 +574,7 @@ a {
     height: 100%;
     position: absolute;
     top: 0;
-    left: 0
+    left: 0;
 }
 
 .page-loader-spinner svg circle {

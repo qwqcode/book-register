@@ -6,9 +6,25 @@ $(document).ready(function () {
     app.work.init();
     app.notify.info('程序初始化完毕');
     app.notify.setShowEnabled(true);
+
+    app.pageLoader.dom = $('#pageLoaderLayer');
+    app.pageLoader.hide();
 });
 
 var app = {};
+
+app.pageLoader = {
+    dom: $(),
+    show: function (text) {
+        text = text || '加载中...';
+        this.dom.find('.loading-text').text(text);
+
+        this.dom.fadeIn(300);
+    },
+    hide: function () {
+        this.dom.fadeOut(300);
+    }
+};
 
 app.data = {
     categoris: {},
@@ -52,6 +68,8 @@ app.helloScreen = {
 
             return false;
         });
+
+        this.wrap.show();
     },
 
     onFormSubmited: function () {
@@ -425,12 +443,27 @@ app.work = {
             manualRowResize: true,
             stretchH: 'all',
             contextMenu: {
+                callback: function (key, options) {
+                    if (key === 'aboutCut' || key === 'aboutCopy' || key === 'aboutPaste') {
+                        setTimeout(function () {
+                            app.dialog.build('换一个方式操作？！', '您可以使用键盘快捷键进行操作：<br>' +
+                                '复制 Ctrl + C<br>粘贴 Ctrl + V<br>剪切 Ctrl + X<br>撤销 Ctrl + Z<br>重做 Ctrl + Y')
+                        }, 100);
+                    }
+
+                    if (key === 'saveData') {
+                        app.work.saveCurrent();
+                    }
+                },
                 items: {
-                    'cut'  : {name: '剪切* (Ctrl+X)'},
-                    'copy' : {name: '复制* (Ctrl+C)'},
-                    'paste': {name: '粘贴* (Ctrl+V)'},
+                    'aboutCut'  : {name: '剪切 (Ctrl+X)'},
+                    'aboutCopy' : {name: '复制 (Ctrl+C)'},
+                    'aboutPaste': {name: '粘贴 (Ctrl+V)'},
+                    "hsep1": "---------",
                     'undo' : {name: '撤销 (Ctrl+Z)'},
-                    'redo' : {name: '重做 (Ctrl+Y)'}
+                    'redo' : {name: '重做 (Ctrl+Y)'},
+                    "hsep2": "---------",
+                    'saveData' : {name: '保存数据'}
                 }
             },
             // Enter envent
@@ -444,6 +477,8 @@ app.work = {
 
         // Spare rows adding
         Handsontable.hooks.add('afterSetDataAtCell', function (changes, source) {
+            // 数据未保存的
+            app.work.isSaved = false;
             // 当编辑了最后一行
             if (changes[0][0] + 1 >= app.work.hot.getData().length) {
                 // 创建新行
@@ -480,9 +515,10 @@ app.work = {
 
         // 离开页面提示
         $(window).on('beforeunload', function(eventObject) {
-            var returnValue = "数据保存了吗？真的要离开吗？";
-            eventObject.returnValue = returnValue;
-            return returnValue;
+            if (!app.work.isSaved) {
+                var returnValue = "数据保存了吗？真的要离开吗？";
+                return eventObject.returnValue = returnValue;
+            }
         })
     },
 
@@ -548,22 +584,27 @@ app.work = {
         return data;
     },
 
+    isSaved: true,
     saveCurrent: function () {
         if (this.hot === null) {
             app.notify.warning('Handsontable 还未实例化');
             return;
         }
 
-        app.dialog.build('上传数据', '在保存数据之前，请确认数据无误，是否继续？', ['继续', function () {
-            app.work.hot.deselectCell();
-            var tableData = app.work.hot.getSourceData();
-            var updateData = app.work.handleTableDataUploadUse(tableData);
-            app.api.uploadData(app.data.currentCategoryName, updateData, function () {
-                // 更新类目列表
-                if (app.category.currentSelector !== null)
-                    app.category.currentSelector.updateFromServer();
-            });
-        }], ['放弃', function () {}]);
+        app.work.hot.deselectCell();
+        var tableData = app.work.hot.getSourceData();
+        var updateData = app.work.handleTableDataUploadUse(tableData);
+        app.pageLoader.show('数据保存中，请勿退出浏览器！');
+        app.api.uploadData(app.data.currentCategoryName, updateData, function () {
+            // 更新类目列表
+            if (app.category.currentSelector !== null)
+                app.category.currentSelector.updateFromServer();
+            app.work.isSaved = true;
+            app.pageLoader.hide();
+        }, function () {
+            app.work.isSaved = false;
+            app.pageLoader.hide();
+        });
     },
 
     exitWork: function() {
@@ -709,14 +750,10 @@ var appUtils = {
             // 超过1小时少于24小时
             s = Math.floor(time / 60 / 60);
             return s + " 小时前";
-        } else if ((time < 60 * 60 * 24 * 7) && (time >= 60 * 60 * 24)) {
+        } else {
             // 超过1天少于7天内
             s = Math.floor(time / 60 / 60 / 24);
             return s + " 天前";
-        } else {
-            // 超过3天
-            var dateObj = new Date(parseInt(date) * 1000);
-            return dateObj.getFullYear() + "/" + (dateObj.getMonth() + 1) + "/" + dateObj.getDate();
         }
     },
     checkLocalTime: function () {

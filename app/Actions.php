@@ -34,6 +34,7 @@ class Actions
         $this->app->get('/getTime', [$this, 'getTime']);
         $this->app->get('/getCategories', [$this, 'getCategories']);
         $this->app->get('/getCategoryBooks', [$this, 'getCategoryBooks']);
+        $this->app->get('/createCategory', [$this, 'createCategory']);
         $this->app->post('/uploadCategoryBooks', [$this, 'uploadCategoryBooks']);
         $this->app->get('/downloadExcel', [$this, 'downloadExcel']);
     }
@@ -211,6 +212,52 @@ class Actions
         $handleData = array_reverse($handleData);
         
         return $handleData;
+    }
+    
+    /**
+     * 创建类目
+     *
+     * @inheritdoc
+     */
+    public function createCategory(Request $request, Response $response, $args)
+    {
+        $registrarName = trim($request->getParam('registrarName'));
+        $categoryName = trim($request->getParam('categoryName'));
+        $currentTime = time();
+        
+        if (empty($registrarName))
+            return $this->resultFalse($response, '参数 registrarName 是必须的');
+        
+        if (empty($categoryName))
+            return $this->resultFalse($response, '参数 categoryName 是必须的');
+        
+        // 准备类目数据
+        $category = $this->tableCategory()->where([
+            'name' => $categoryName
+        ]);
+    
+        // 若类目不存在 则创建一个
+        if (!$category->exists()) {
+            $this->tableCategory()->insert([
+                'name' => $categoryName,
+                'registrar_name' => $registrarName,
+                'update_at' => $currentTime,
+                'created_at' => $currentTime,
+            ]);
+    
+            // 图书数据插入数据库
+            $this->tableBook()->insert([
+                'category_name' => $categoryName,
+                'category_book_data' => '[{"name":"","numbering":1,"press":"","remarks":""}]',
+                'registrar_name' => $registrarName,
+                'created_at' => $currentTime,
+            ]);
+    
+            return $this->resultTrue($response, '类目' . $categoryName . ' 创建成功');
+        } else {
+            $category = $category->get()->first();
+            return $this->resultFalse($response, '类目' . $categoryName . ' 已存在，请将图书交给 ' . $category->registrar_name . ' 负责');
+        }
     }
     
     /**

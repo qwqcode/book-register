@@ -80,21 +80,7 @@ app.helloScreen = {
 app.category = {
     init: function () {},
 
-    currentSelector: null,
-
-    create: function () {
-        var categoryName = window.prompt('填入类目名，例如：Z', '');
-        if (!!categoryName && typeof(categoryName) === 'string' && $.trim(categoryName).length > 0) {
-            for (var i in app.data.categoris) {
-                var item = app.data.categoris[i];
-                if (item['name'] === categoryName) {
-                    app.notify.warning('类目' + categoryName + ' 已存在，无需再创建！');
-                    return;
-                }
-            }
-            this.uploadData($.trim(categoryName), [{"numbering": "1", "name": "", "press": "", "remarks": ""}]);
-        }
-    }
+    currentSelector: null
 };
 
 /* Category > Selector Builder */
@@ -108,7 +94,7 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
         '<span class="title">书籍类目列表</span>' +
         '<span class="part-right">' +
         '<span class="list-actions">' +
-        '<span onclick="app.category.create()"><i class="zmdi zmdi-plus"></i> 创建类目</span>' +
+        '<span id="createCategoryBtn"><i class="zmdi zmdi-plus"></i> 创建类目</span>' +
         '</span>' +
         '<span class="close-btn zmdi zmdi-close"></span>' +
         '</span>' +
@@ -122,15 +108,39 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
         '</div>'
     );
 
+    // Create Category Btn
+    dom.find('#createCategoryBtn').click(function () {
+        var categoryName = window.prompt('填入类目名，例如：Z', '');
+        if (!!categoryName && String(categoryName).length > 0) {
+            app.dialog.build('创建类目', '确定要创建 类目' + appUtils.htmlEncode(categoryName) + ' 吗？', ['确定', function () {
+                obj.setLoading(true);
+                app.api.createCategory($.trim(categoryName), function () {
+                    obj.updateFromServer();
+                }, function () {
+                    obj.updateFromServer();
+                });
+            }], ['取消']);
+        }
+    });
+
+    // Close Btn
+    if (showCloseBtn !== undefined && typeof showCloseBtn === 'boolean' && !showCloseBtn) {
+        dom.find('.close-btn').remove();
+    } else {
+        dom.find('.close-btn').click(function () {
+            obj.hide();
+        });
+    }
+
     obj.getDom = function () {
         return dom;
     };
 
     obj.updateFromServer = function () {
         obj.setLoading(true);
-        app.category.categoriesDownload(function () {
-            obj.setLoading(false);
+        app.api.categoriesDownload(function () {
             obj.update();
+            obj.setLoading(false);
         }, function () {
             obj.setLoading(false);
         });
@@ -152,8 +162,8 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
                 '</div>' +
                 '<div class="item-desc">' +
                 '<span title="登记员"><i class="zmdi zmdi-account"></i> ' + appUtils.htmlEncode(item['registrar_name'] || "未知") + '</span>' +
-                '<span title="更新时间"><i class="zmdi zmdi-cloud-upload"></i> ' + appUtils.timeAgo(item['update_at'] || "未知") + '</span>' +
-                '<span title="创建时间"><i class="zmdi zmdi-plus-square"></i> ' + appUtils.timeAgo(item['created_at'] || "未知") + '</span>' +
+                '<span title="更新时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['update_at']) + '</span>' +
+                '<span title="创建时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['created_at']) + '</span>' +
                 '</div>' +
                 '</div>'
             );
@@ -178,29 +188,42 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
             return;
         }
 
-        obj.setLoading(true);
-        app.category.booksDownload(categoryData, function () {
-            // 当图书数据下载完毕
-            obj.setLoading(false);
+        var categoryRegistrarName = categoryData['registrar_name'] || '';
 
-            if (!app.data.categoryBooks.hasOwnProperty(categoryName)) {
-                app.notify.error('真是奇怪呐... 未找到 app.data.categories 中的该类目数据');
-                return;
-            }
+        var startWork = function () {
+            obj.setLoading(true);
+            app.api.booksDownload(categoryData, function () {
+                // 当图书数据下载完毕
+                obj.update();
+                obj.setLoading(false);
 
-            var categoryBooks = app.data.categoryBooks[categoryName];
+                if (!app.data.categoryBooks.hasOwnProperty(categoryName)) {
+                    app.notify.error('真是奇怪呐... 未找到 app.data.categories 中的该类目数据');
+                    return;
+                }
 
-            app.data.currentCategoryIndex = categoryDataIndex;
-            app.data.currentCategoryName = categoryName;
+                var categoryBooks = app.data.categoryBooks[categoryName];
 
-            // 正式开始工作
-            app.work.show();
-            app.work.newTable(app.work.handleBooksTableUse(categoryName, categoryBooks));
+                app.data.currentCategoryIndex = categoryDataIndex;
+                app.data.currentCategoryName = categoryName;
 
-        }, function () {
-            obj.setLoading(false);
-            app.notify.error('无法打开该类目');
-        });
+                // 正式开始工作
+                app.work.show();
+                app.work.newTable(app.work.handleBooksTableUse(categoryName, categoryBooks));
+
+            }, function () {
+                obj.setLoading(false);
+                app.notify.error('无法打开该类目');
+            });
+        };
+
+        if (categoryRegistrarName !== app.data.registrarName) {
+            app.dialog.build('编辑警告', '该类目由 ' + appUtils.htmlEncode(categoryRegistrarName) + ' 全权负责<br/>如果你得到了 ' + appUtils.htmlEncode(categoryName) + '类 图书，请交给他登记<br/>为了防止数据冲突，禁止编辑该类目！', ['返回', function () {}], ['仍然继续', function () {
+                startWork();
+            }]);
+        } else {
+            startWork();
+        }
     };
 
     obj.show = function () {
@@ -233,22 +256,15 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
         }
     };
 
-    // Close Btn
-    if (showCloseBtn !== undefined && typeof showCloseBtn === 'boolean' && !showCloseBtn) {
-        dom.find('.close-btn').remove();
-    } else {
-        dom.find('.close-btn').click(function () {
-            obj.hide();
-        });
-    }
-
     dom.appendTo(appendingDom);
 
     return obj;
 };
 
-/* Api Actions */
-app.category.categoriesDownload = function (onSuccess, onError) {
+/* Api */
+app.api = {};
+
+app.api.categoriesDownload = function (onSuccess, onError) {
     onSuccess = onSuccess || function () {
     };
     onError = onError || function () {
@@ -259,11 +275,10 @@ app.category.categoriesDownload = function (onSuccess, onError) {
         success: function (data) {
             if (!!data['success']) {
                 app.data.categoris = data['data']['categories'];
-                app.notify.success('类目列表成功更新');
+                // app.notify.success('类目列表成功更新');
                 onSuccess(data);
             } else {
                 app.notify.error(data['msg']);
-                app.notify.error('服务器程序错误，类目列表无法失败');
                 onError();
             }
         }, error: function () {
@@ -273,7 +288,7 @@ app.category.categoriesDownload = function (onSuccess, onError) {
     });
 };
 
-app.category.booksDownload = function (categoryData, onSuccess, onError) {
+app.api.booksDownload = function (categoryData, onSuccess, onError) {
     onSuccess = onSuccess || function () {
     };
     onError = onError || function () {
@@ -295,34 +310,48 @@ app.category.booksDownload = function (categoryData, onSuccess, onError) {
                         break;
                     }
                 }
-                if (app.category.currentSelector !== null) {
-                    app.category.currentSelector.update();
-                    app.category.currentSelector.setLoading(false);
-                }
 
                 app.notify.success('类目' + categoryData['name'] + ' 图书数据成功获取');
                 onSuccess(data);
             } else {
-                if (app.category.currentSelector !== null) {
-                    app.category.currentSelector.setLoading(false);
-                }
-
                 app.notify.error(data['msg']);
-                app.notify.error('服务器程序错误，类目图书无法获取');
                 onError();
             }
         }, error: function () {
-            if (app.category.currentSelector !== null) {
-                app.category.currentSelector.setLoading(false);
-            }
-
             app.notify.error('网络错误，类目图书无法获取');
             onError();
         }
     });
 };
 
-app.category.uploadData = function (categoryName, categoryBooksArr, onSuccess, onError) {
+app.api.createCategory = function (categoryName, onSuccess, onError) {
+    onSuccess = onSuccess || function () {
+    };
+    onError = onError || function () {
+    };
+
+    $.ajax({
+        url: '/createCategory', data: {
+            'categoryName': categoryName,
+            'registrarName': app.data.registrarName
+        }, beforeSend: function () {
+
+        }, success: function (data) {
+            if (!!data['success']) {
+                app.notify.success(data['msg']);
+                onSuccess(data);
+            } else {
+                app.notify.error(data['msg']);
+                onError();
+            }
+        }, error: function () {
+            app.notify.error('网络错误，类目无法创建');
+            onError();
+        }
+    });
+};
+
+app.api.uploadData = function (categoryName, categoryBooksArr, onSuccess, onError) {
     onSuccess = onSuccess || function () {
     };
     onError = onError || function () {
@@ -341,9 +370,6 @@ app.category.uploadData = function (categoryName, categoryBooksArr, onSuccess, o
             if (!!data['success']) {
                 app.notify.success(data['msg']);
                 onSuccess();
-                // 更新类目列表
-                if (app.category.currentSelector !== null)
-                    app.category.currentSelector.updateFromServer();
             } else {
                 app.notify.error(data['msg']);
                 app.notify.error('严重：服务器程序错误，数据无法保存，面临丢失的风险');
@@ -528,24 +554,22 @@ app.work = {
             return;
         }
 
-        if (!window.confirm('在保存数据之前，请确认数据无误，是否继续？')){
-            return;
-        }
-
-        app.work.hot.deselectCell();
-        var tableData = this.hot.getSourceData();
-        var updateData = this.handleTableDataUploadUse(tableData);
-        app.category.uploadData(app.data.currentCategoryName, updateData, function () {
-
-        });
+        app.dialog.build('上传数据', '在保存数据之前，请确认数据无误，是否继续？', ['继续', function () {
+            app.work.hot.deselectCell();
+            var tableData = app.work.hot.getSourceData();
+            var updateData = app.work.handleTableDataUploadUse(tableData);
+            app.api.uploadData(app.data.currentCategoryName, updateData, function () {
+                // 更新类目列表
+                if (app.category.currentSelector !== null)
+                    app.category.currentSelector.updateFromServer();
+            });
+        }], ['放弃', function () {}]);
     },
 
     exitWork: function() {
-        if (!window.confirm('数据保存了吗？是否真的要退出？')){
-            return;
-        }
-
-        window.location.reload();
+        app.dialog.build('退出', '数据保存了吗？是否真的要退出？', ['退出', function () {
+            window.location.reload();
+        }], ['放弃', function () {}]);
     }
 };
 
@@ -577,7 +601,7 @@ app.notify = {
         if (!this.showEnabled)
             return false;
 
-        timeout = (timeout !== undefined && typeof timeout === 'number') ? timeout : 2000;
+        timeout = (timeout !== undefined && typeof timeout === 'number') ? timeout : 4000;
 
         var layerDom = $('.notify-layer');
         if (layerDom.length === 0)
@@ -611,8 +635,63 @@ app.notify = {
     }
 };
 
+app.dialog = {
+    build: function (title, content, yesBtn, cancelBtn) {
+        var layerSel = '.dialog-layer';
+
+        if ($(layerSel).length !== 0)
+            $(layerSel).remove();
+
+        var dialogLayerDom = $('<div class="dialog-layer anim-fade-in" />').appendTo('body');
+        var dialogLayerHide = function () {
+            dialogLayerDom.addClass('anim-fade-out');
+            setTimeout(function () {
+                dialogLayerDom.hide();
+            }, 200);
+        };
+
+        var dialogDom = $('<div class="dialog-inner"><div class="dialog-title">'+title+'</div>\n<div class="dialog-content">'+content+'</div></div>').appendTo(dialogLayerDom);
+
+        // 底部按钮
+        if (!!yesBtn || !!cancelBtn) {
+            var dialogBottomDom = $('<div class="dialog-bottom"></div>')
+                .appendTo(dialogDom);
+
+            // 确定按钮
+            if (!!yesBtn) {
+                var yesOnClick = yesBtn[1] || function () {};
+                var yesBtnText = yesBtn[0] || '确定';
+
+                $('<a class="dialog-btn yes-btn">' + yesBtnText + '</a>').click(function () {
+                    dialogLayerHide();
+                    yesOnClick();
+                }).appendTo(dialogBottomDom);
+            }
+
+            // 取消按钮
+            if (!!cancelBtn) {
+                var cancelBtnText = cancelBtn[0] || '取消';
+                var cancelOnClick = cancelBtn[1] || function () {};
+
+                $('<a class="dialog-btn cancel-btn">' + cancelBtnText + '</a>').click(function () {
+                    dialogLayerHide();
+                    cancelOnClick();
+                }).appendTo(dialogBottomDom);
+            }
+        } else {
+            $('<a class="right-btn"><i class="zmdi zmdi-close"></i></a>').appendTo($(dialogDom).find('.dialog-title')).click(function () {
+                dialogLayerHide();
+            });
+        }
+    }
+};
+
 var appUtils = {
     timeAgo: function (date) {
+        if (!date || isNaN(date) || date === 0) {
+            return '未知';
+        }
+
         // 获取js 时间戳
         var time = new Date().getTime();
         // 去掉 js 时间戳后三位，与php 时间戳保持一致
@@ -648,14 +727,13 @@ var appUtils = {
                 if (!!data['success']) {
                     var serverTime = data['data']['time'];
                     var serverTimeFormat = data['data']['time_format'];
-                    console.log('服务器当前时间：' + serverTimeFormat);
                     // 获取 js 时间戳
                     var time = new Date().getTime();
                     // 去掉 js 时间戳后三位，与 php 时间戳保持一致
                     time = parseInt((time - serverTime * 1000) / 1000);
-                    // 若时差超过3小时
+                    // 若时差超过1小时
                     if (Math.floor(time / 60 / 60) >= 1 || Math.floor(time / 60 / 60) <= -1) {
-                        app.notify.warning('当前本地时间快了 ' + Math.floor(time / 60 / 60) + ' 小时，请调整本地时间为 ' + serverTimeFormat)
+                        app.dialog.build('警告', '当前本地系统时间快了 ' + Math.floor(time / 60 / 60) + ' 小时<br/>为了避免发生错误，请调整为 ' + serverTimeFormat);
                     }
                 } else {
                     app.notify.warning('服务器当前时间戳获取失败')

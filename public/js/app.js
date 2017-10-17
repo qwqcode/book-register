@@ -112,6 +112,7 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
         '<span class="title">书籍类目列表</span>' +
         '<span class="part-right">' +
         '<span class="list-actions">' +
+        '<span><a href="/downloadExcel?categoryName=__ALL"><i class="zmdi zmdi-download"></i> 下载数据</a></span>' +
         '<span id="createCategoryBtn"><i class="zmdi zmdi-plus"></i> 创建类目</span>' +
         '</span>' +
         '<span class="close-btn zmdi zmdi-close"></span>' +
@@ -168,8 +169,7 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
         var contentDom = dom.find('.list-content');
         var categories = app.data.categoris;
         contentDom.html('');
-        for (var i in categories) {
-            var item = categories[i];
+        var itemRender = function (item) {
             var itemDom = $(
                 '<div class="item" data-category-index="' + i + '">' +
                 '<div class="item-head">' +
@@ -189,7 +189,26 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
                 obj.onItemClick($(this).attr('data-category-index'));
             });
             itemDom.appendTo(contentDom);
+        };
+
+        // 我负责的
+        var mineCategoryNames = [];
+        for (var indexMine in categories) {
+            var itemMain = categories[indexMine];
+            if (!!itemMain['registrar_name'] && itemMain['registrar_name'] === app.data.registrarName) {
+                mineCategoryNames.push(itemMain['name']);
+                itemRender(itemMain);
+            }
         }
+        // 非我负责的
+        for (var i in categories) {
+            var item = categories[i];
+            if (mineCategoryNames.indexOf(item['name']) > -1)
+                continue;
+
+            itemRender(item);
+        }
+
         return true;
     };
 

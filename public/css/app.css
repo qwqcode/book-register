@@ -267,9 +267,18 @@ a {
 }
 
 .category-list .list-head .list-actions > span:not(:last-child) {
+    margin-right: 15px;
+    border-right: 1px solid #EEE;
+    padding-right: 15px;
 }
 
-.category-list .list-head .list-actions > span:hover {
+.category-list .list-head .list-actions > span,
+.category-list .list-head .list-actions > span > a {
+    color: #818f9a;
+}
+
+.category-list .list-head .list-actions > span:hover,
+.category-list .list-head .list-actions > span > a:hover {
     color: #2196f3;
 }
 

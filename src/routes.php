@@ -16,7 +16,7 @@ $app->add(function (Request $request, Response $response, $next) {
 });
 
 // Actions
-new App\Actions($app,
+new App\API($app,
     $app->getContainer()->get('db'),
     $app->getContainer()->get('renderer'),
     $app->getContainer()->get('logger')

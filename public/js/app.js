@@ -169,9 +169,9 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
         var contentDom = dom.find('.list-content');
         var categories = app.data.categoris;
         contentDom.html('');
-        var itemRender = function (item) {
+        var itemRender = function (index, item) {
             var itemDom = $(
-                '<div class="item" data-category-index="' + i + '">' +
+                '<div class="item" data-category-index="' + index + '">' +
                 '<div class="item-head">' +
                 '<span class="category-name' + (item['registrar_name'] === app.data.registrarName ? ' is-mine' : '') + '">' +
                 appUtils.htmlEncode(item['name'] || "未命名") +
@@ -197,16 +197,16 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
             var itemMain = categories[indexMine];
             if (!!itemMain['registrar_name'] && itemMain['registrar_name'] === app.data.registrarName) {
                 mineCategoryNames.push(itemMain['name']);
-                itemRender(itemMain);
+                itemRender(indexMine, itemMain);
             }
         }
         // 非我负责的
-        for (var i in categories) {
-            var item = categories[i];
+        for (var indexAll in categories) {
+            var item = categories[indexAll];
             if (mineCategoryNames.indexOf(item['name']) > -1)
                 continue;
 
-            itemRender(item);
+            itemRender(indexAll, item);
         }
 
         return true;

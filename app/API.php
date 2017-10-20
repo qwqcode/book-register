@@ -37,19 +37,25 @@ class API
         $routes = [
             ['GET', '/', 'index'],
             ['GET', '/getTime', 'getTime'],
-            ['GET', '/categories[/{name}]', 'categories'],
+            ['GET', '/getCategory', 'getCategory'],
+            ['POST', '/uploadCategory', 'uploadCategory'],
             ['GET', '/createCategory', 'createCategory'],
-            ['POST', '/uploadCategoryBooks', 'uploadCategoryBooks'],
             ['GET', '/downloadExcel', 'downloadExcel'],
         ];
         
         foreach ($routes as $item) {
             switch (strtoupper($item[0])) {
                 case 'GET':
-                    $this->app->get($item[1], [$this, $item[2]]);
+                    $this->app->get($item[1], [
+                        $this,
+                        $item[2],
+                    ]);
                     break;
                 case 'POST':
-                    $this->app->post($item[1], [$this, $item[2]]);
+                    $this->app->post($item[1], [
+                        $this,
+                        $item[2],
+                    ]);
                     break;
             }
         }
@@ -76,7 +82,7 @@ class API
      */
     public function getTime(Request $request, Response $response, $args)
     {
-        return $this->resultTrue($response, '获取服务器时间成功', [
+        return $this->success($response, '获取服务器时间成功', [
             'success'     => true,
             'time'        => time(),
             'time_format' => date('Y-m-d H:i:s', time()),
@@ -84,29 +90,31 @@ class API
     }
     
     /**
-     * 获取所有分类
+     * 获取分类
      *
      * @inheritdoc
      */
-    public function categories(Request $request, Response $response, $args)
+    public function getCategory(Request $request, Response $response, $args)
     {
+        $name = trim($request->getParam('name'));
+        $withBooks = trim($request->getParam('withBooks'));
+    
         $categoriesTable = $this->tableCategory();
-        $isWithBooks = $request->getParam('withBooks');
-        $categoryName = $args['name'];
         
-        if (!!$categoryName) {
-            $categories = $categoriesTable->where(['name' => $categoryName]);
+        if (!empty($name)) {
+            $categories = $categoriesTable->where(['name' => $name]);
             if (!$categories->exists())
-                return $this->resultFalse($response, '该类目不存在');
+                return $this->error($response, '该类目不存在');
             $categories = $categories->get();
-        } else {
+        }
+        else {
             $categories = $categoriesTable->get();
         }
         
         $apiData = [];
         foreach ($categories as $index => $item) {
             /** @var $item Category */
-    
+            
             $apiData[$index] = [
                 'name'              => $item->name,
                 'user'              => $item->user,
@@ -118,126 +126,78 @@ class API
                 'created_at_format' => $item->updated_at->toDateTimeString(),
             ];
             
-            if (!!$isWithBooks || !!$categoryName) {
+            if (!empty($withBooks) || !empty($name)) {
                 $apiData[$index]['books'] = $this->handleBooksForGetting($item->books->toArray());
             }
         }
         
-        return $this->resultTrue($response, '类目数据获取成功', [
+        return $this->success($response, '类目数据获取成功', [
             'categories_total' => $categories->count(),
             'categories'       => $apiData,
         ]);
     }
     
     /**
-     * 处理图书数据 for Android APP
+     * 上传类目数据
      *
-     * @param array $booksArr 原图书数据
-     * @return array 处理后的图书数据
+     * @inheritdoc
      */
-    private function handleBooksOld(array $booksArr)
+    public function uploadCategory(Request $request, Response $response, $args)
     {
-        if (empty($booksArr) || !is_array($booksArr) || count($booksArr) < 1)
-            return [];
-        
-        $handleData = [];
-        $numbering = function () use ($booksArr) {
-            // 获取最大的 numbering
-            $maxNumbering = 1;
-            foreach ($booksArr as $item) {
-                $numbering = intval($item['numbering'] ?? 0);
-                if ($numbering > $maxNumbering && (!empty($item['name']) || !empty($item['press'] || !empty($item['remarks']))))
-                    $maxNumbering = $numbering;
-            }
-            
-            return $maxNumbering;
-        };
-        $numbering = $numbering();
-        do {
-            $index = $numbering - 1;
-            
-            $handleData[$index] = [
-                'numbering' => strval($numbering),
-                'name'      => '',
-                'press'     => '',
-                'remarks'   => '',
-            ];
-            
-            // 搜寻是否有当前 numbering 的图书数据
-            foreach ($booksArr as $bookItem) {
-                if ($bookItem['numbering'] == $numbering) {
-                    $handleData[$index] = $bookItem;
-                    break;
-                }
-            }
-            
-            $numbering--;
-            
-        } while ($numbering > 0);
-        
-        // 数组顺序翻转
-        $handleData = array_reverse($handleData);
-        
-        return $handleData;
-    }
+        $user = trim($request->getParam('user'));
+        $books = trim($request->getParam('books'));
+        $time = time();
     
-    /**
-     * 处理图书数据 for Getting API
-     *
-     * @param array $booksArr 原图书数据
-     * @return array 处理后的图书数据
-     */
-    private function handleBooksForGetting(array $booksArr)
-    {
-        if (empty($booksArr) || !is_array($booksArr) || count($booksArr) < 1)
-            return [];
-        
-        $data = [];
-        
-        $numbering = function () use ($booksArr) {
-            // 获取最大的 numbering
-            $maxNumbering = 1;
-            foreach ($booksArr as $item) {
-                $numbering = intval($item['numbering'] ?? 0);
-                if ($numbering > $maxNumbering && (!empty($item['name']) || !empty($item['press'] || !empty($item['remarks']))))
-                    $maxNumbering = $numbering;
+        if (empty($user))
+            return $this->error($response, '参数 user 是必须的');
+        if (empty($books))
+            return $this->error($response, '参数 books 是必须的');
+    
+        $books = @json_decode($books, true);
+        if (json_last_error() !== JSON_ERROR_NONE)
+            return $this->error($response, '图书 JSON 解析失败 ' . json_last_error_msg());
+    
+        // 导入单个类目图书数据
+        $importCategoryBooks = function ($categoryName, array $books) use ($user, $time) {
+            foreach ($books as $item) {
+                if (empty($item['numbering']) || (empty($item['name']) && empty($item['press']) && empty($item['remarks'])))
+                    continue;
+    
+                $this->tableBook()->updateOrInsert([
+                    'category_name' => $categoryName,
+                    'numbering'     => $item['numbering'],
+                ], [
+                    'name'       => $item['name'],
+                    'press'      => $item['press'],
+                    'remarks'    => $item['remarks'],
+                    'user'       => $user,
+                    'created_at' => $time,
+                    'updated_at' => $time,
+                ]);
             }
-            
-            return $maxNumbering;
+            return true;
         };
-        $numbering = $numbering();
+    
+        // 导入多类图书
+        foreach ($books as $categoryName => $arr) {
+            try {
+                $category = $this->tableCategory()->where([
+                    'name' => $categoryName,
+                ]);
+    
+                if (!$category->exists())
+                    throw new \Exception('类目' . $categoryName . ' 未找到');
+                
+                $importCategoryBooks($categoryName, $arr);
         
-        do {
-            $index = $numbering - 1;
-            
-            $data[$index] = [
-                'numbering' => strval($numbering),
-                'name'      => '',
-                'press'     => '',
-                'remarks'   => '',
-            ];
-            
-            // 搜寻是否有当前 numbering 的图书数据
-            foreach ($booksArr as $bookItem) {
-                if ($bookItem['numbering'] == $numbering) {
-                    $data[$index] = [
-                        'numbering' => strval($numbering),
-                        'name'      => $bookItem['name'],
-                        'press'     => $bookItem['press'],
-                        'remarks'   => $bookItem['remarks'],
-                    ];
-                    break;
-                }
+                $category->updateTimestamps();
+            } catch (\Exception $exception) {
+                $this->logger->error($exception->getMessage(), $request->getParams());
+                continue;
             }
-            
-            $numbering--;
-            
-        } while ($numbering > 0);
-        
-        // 数组顺序翻转
-        $data = array_reverse($data);
-        
-        return $data;
+        }
+    
+        return $this->success($response, '图书数据已保存');
     }
     
     /**
@@ -245,47 +205,39 @@ class API
      *
      * @inheritdoc
      */
-    public function createCategory(Request $request, Response $response, $args)
+    public function categoryCreate(Request $request, Response $response, $args)
     {
-        $registrarName = trim($request->getParam('registrarName'));
-        $categoryName = trim($request->getParam('categoryName'));
-        $currentTime = time();
+        $user = trim($request->getParam('user'));
+        $name = trim($request->getParam('name'));
+        $time = time();
         
-        if (empty($registrarName))
-            return $this->resultFalse($response, '参数 registrarName 是必须的');
+        if (empty($user))
+            return $this->error($response, '参数 user 是必须的');
+        if (empty($name))
+            return $this->error($response, '参数 name 是必须的');
         
-        if (empty($categoryName))
-            return $this->resultFalse($response, '参数 categoryName 是必须的');
-        
-        // 准备类目数据
+        // 尝试获取类目
         $category = $this->tableCategory()->where([
-            'name' => $categoryName,
+            'name' => $name,
         ]);
         
-        // 若类目不存在 则创建一个
         if (!$category->exists()) {
-            $this->tableCategory()->insert([
-                'name'           => $categoryName,
-                'registrar_name' => $registrarName,
-                'update_at'      => $currentTime,
-                'created_at'     => $currentTime,
+            // 若类目不存在 则创建一个
+            $insert = $this->tableCategory()->insert([
+                'name'       => $name,
+                'user'       => $user,
+                'created_at' => $time,
+                'updated_at' => $time,
             ]);
             
-            // 图书数据插入数据库
-            $this->tableBookOld()->insert([
-                'category_name'      => $categoryName,
-                'category_book_data' => '[{"name":"","numbering":1,"press":"","remarks":""}]',
-                'registrar_name'     => $registrarName,
-                'created_at'         => $currentTime,
-            ]);
-            
-            return $this->resultTrue($response, '类目' . $categoryName . ' 创建成功');
+            if ($insert)
+                return $this->success($response, '类目创建成功');
         }
         else {
-            $category = $category->get()->first();
-            
-            return $this->resultFalse($response, '类目' . $categoryName . ' 已存在，请将图书交给 ' . $category->registrar_name . ' 负责');
+            return $this->error($response, '同名类目已存在，无需再次创建');
         }
+        
+        return $this->success($response, '类目创建失败');
     }
     
     /**
@@ -300,15 +252,15 @@ class API
         $currentTime = time();
         
         if (empty($registrarName))
-            return $this->resultFalse($response, 'Who Are U ?');
+            return $this->error($response, 'Who Are U ?');
         
         if (empty($booksInCategoriesJson))
-            return $this->resultFalse($response, '图书数据不能没有哇 ~');
+            return $this->error($response, '图书数据不能没有哇 ~');
         
         // 准备 booksInCategories
         $booksInCategoriesArr = @json_decode($booksInCategoriesJson, true);
         if (json_last_error() !== JSON_ERROR_NONE)
-            return $this->resultFalse($response, '类目图书 JSON 解析失败 ' . json_last_error_msg());
+            return $this->error($response, '类目图书 JSON 解析失败 ' . json_last_error_msg());
         
         $bookTotal = 0; // 导入的图书总数
         
@@ -355,7 +307,7 @@ class API
             $bookTotal += count($categoryBooks);
         }
         
-        return $this->resultTrue($response, '本次共上传了 ' . count($booksInCategoriesArr) . ' 个类目的 ' . $bookTotal . ' 本图书数据', [
+        return $this->success($response, '本次共上传了 ' . count($booksInCategoriesArr) . ' 个类目的 ' . $bookTotal . ' 本图书数据', [
             'update_at'        => $currentTime,
             'update_at_format' => date('Y-m-d H:i:s', $currentTime),
         ]);
@@ -450,33 +402,9 @@ class API
         $objPHPExcel = new \PHPExcel();
         $objPHPExcel->setActiveSheetIndex(0);
         
-        $cols = [
-            'A',
-            'B',
-            'C',
-            'D',
-            'E',
-            'F',
-            'G',
-        ];
-        $data[1] = [
-            '类目',
-            '序号',
-            '索引号',
-            '书名',
-            '出版社',
-            '备注',
-            '登记员',
-        ];
-        $width = [
-            8,
-            8,
-            10,
-            25,
-            30,
-            20,
-            10,
-        ];
+        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+        $data[1] = ['类目', '序号', '索引号', '书名', '出版社', '备注', '登记员'];
+        $width = [8, 8, 10, 25, 30, 20, 10];
         foreach ($data as $rowNum => $item) {
             foreach ($cols as $index => $colName) {
                 $objPHPExcel->getActiveSheet()->setCellValue($colName . $rowNum, $item[$index]);
@@ -493,6 +421,65 @@ class API
         header('Cache-Control: max-age=0');
         $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
         $objWriter->save('php://output');
+    }
+    
+    /**
+     * 处理图书数据 for Getting API
+     *
+     * @param array $booksArr 原图书数据
+     * @return array 处理后的图书数据
+     */
+    private function handleBooksForGetting(array $booksArr)
+    {
+        if (empty($booksArr) || count($booksArr) < 1)
+            return [];
+        
+        $data = [];
+        
+        $numbering = function () use ($booksArr) {
+            // 获取最大的 numbering
+            $maxNumbering = 1;
+            foreach ($booksArr as $item) {
+                $numbering = intval($item['numbering'] ?? 0);
+                if ($numbering > $maxNumbering && (!empty($item['name']) || !empty($item['press'] || !empty($item['remarks']))))
+                    $maxNumbering = $numbering;
+            }
+            
+            return $maxNumbering;
+        };
+        $numbering = $numbering();
+        
+        do {
+            $index = $numbering - 1;
+            
+            $data[$index] = [
+                'numbering' => strval($numbering),
+                'name'      => '',
+                'press'     => '',
+                'remarks'   => '',
+            ];
+            
+            // 搜寻是否有当前 numbering 的图书数据
+            foreach ($booksArr as $bookItem) {
+                if ($bookItem['numbering'] == $numbering) {
+                    $data[$index] = [
+                        'numbering' => strval($numbering),
+                        'name'      => $bookItem['name'],
+                        'press'     => $bookItem['press'],
+                        'remarks'   => $bookItem['remarks'],
+                    ];
+                    break;
+                }
+            }
+            
+            $numbering--;
+            
+        } while ($numbering > 0);
+        
+        // 数组顺序翻转
+        $data = array_reverse($data);
+        
+        return $data;
     }
     
     /**
@@ -536,7 +523,7 @@ class API
      * @param array $data 附带正确数据
      * @return Response
      */
-    private function resultTrue(Response $response, $msg, array $data = [])
+    private function success(Response $response, $msg, array $data = [])
     {
         return $response->withJson([
             'success' => true,
@@ -553,7 +540,7 @@ class API
      * @param array $data 附带错误数据
      * @return Response
      */
-    private function resultFalse(Response $response, $msg, array $data = [])
+    private function error(Response $response, $msg, array $data = [])
     {
         return $response->withJson([
             'success' => false,

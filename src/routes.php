@@ -6,7 +6,13 @@ use Slim\Http\Response;
 // Globally
 $app->add(function (Request $request, Response $response, $next) {
     /** @var Response $response */
+    
+    $requestIP = $request->getServerParam('REMOTE_ADDR');
+    
+    $this->logger->info('PATH: "' . $request->getRequestTarget() . '", IP: "' . $requestIP . '"');
+    
     $response = $next($request, $response);
+    
     return $response
         ->withHeader('Pragma', 'no-cache')
         ->withHeader('Cache-Control', 'no-store')

@@ -1,59 +1,91 @@
 /* Zneiat/library-register-server */
 $(document).ready(function () {
     appUtils.checkLocalTime();
-    app.helloScreen.init();
-    app.category.init();
-    app.work.init();
+
+    app.data.register();
+    app.main.register();
+
     app.notify.info('程序初始化完毕');
     app.notify.setShowEnabled(true);
 
-    app.pageLoader.dom = $('#pageLoaderLayer');
     app.pageLoader.hide();
 });
 
 var app = {};
 
 app.pageLoader = {
-    dom: $(),
+    sel: '#pageLoaderLayer',
     show: function (text) {
         text = text || '加载中...';
-        this.dom.find('.loading-text').text(text);
-
-        this.dom.fadeIn(300);
+        var dom = $(this.sel);
+        dom.find('.loading-text').text(text);
+        dom.fadeIn(300);
     },
     hide: function () {
-        this.dom.fadeOut(300);
+        var dom = $(this.sel);
+        dom.fadeOut(300);
     }
 };
 
 app.data = {
+    register: function () {
+        this.user = window.localStorage ? localStorage.getItem('user') || null : null;
+    },
+    user: null,
+    setUser: function (val) {
+        if (!val || typeof (val) !== 'string' || $.trim(val).length < 1) return;
+        val = $.trim(val);
+        this.user = val;
+        window.localStorage ? localStorage.setItem('user', val) : null;
+    },
+    getUser: function () {
+        return this.user || '';
+    },
+    clearUser: function () {
+        this.user = null;
+        window.localStorage ? localStorage.removeItem('user') : null;
+    },
     categoris: {},
     categoryBooks: {},
-    registrarName: null,
     currentCategoryIndex: null,
     currentCategoryName: null,
     workCategoryIsSaved: false
 };
 
-/* HelloScreen */
-app.helloScreen = {
+/* Main */
+app.main = {
     dom: $(),
     wrap: $(),
     headDom: $(),
-    formDom: $(),
+    loginDom: $(),
+    categoryListDom: $(),
+    categoryListObj: null,
 
-    init: function () {
-        this.dom = $('#helloScreen');
-        this.wrap = $('.hello-screen-wrap');
-        this.headDom = $('#helloHead');
+    register: function () {
+        this.dom = $('.main');
+        this.wrap = $('.main-wrap');
+        this.headDom = $('.main-head');
+        this.loginDom = $('.main-login');
+        this.categoryListDom = $('.main-category-list-wrap');
 
-        this.formDom = $('#helloForm');
-        var localRegistrarName = window.localStorage ? localStorage.getItem('registrarName') : false;
-        if (localRegistrarName) {
-            this.formDom.find('#yourName').val(localRegistrarName);
-        }
+        // Header
+        this.headDom.find('.user-name').click(function () {
+            app.dialog.build('改变身份', '确定要改变自己的身份？', ['确定', function () {
+                app.main.toggleLogin();
+                app.data.clearUser();
+            }], ['取消', null]);
+        });
 
-        this.formDom.submit(function () {
+        // Category List
+        this.categoryListObj = this.categoryList(this.categoryListDom);
+        this.categoryListObj.updateFromServer(); // Update Category Data
+
+        // Login Check
+        if (!!app.data.getUser())
+            this.toggleCategoryList();
+
+        // Login Form
+        this.loginDom.submit(function () {
             var yourName = $(this).find('#yourName');
             var yourNameVal = $.trim(yourName.val());
             if (yourNameVal.length < 1) {
@@ -61,32 +93,29 @@ app.helloScreen = {
                 return false;
             }
 
-            app.data.registrarName = yourNameVal;
-            window.localStorage ? localStorage.setItem('registrarName', yourNameVal) : null;
-
-            app.helloScreen.onFormSubmited();
+            app.main.toggleCategoryList(yourNameVal);
 
             return false;
         });
 
-        this.wrap.show();
+        this.show();
     },
 
-    onFormSubmited: function () {
-        this.formDom.addClass('form-hide');
+    toggleCategoryList: function (userName) {
+        if (!!userName)
+            app.data.setUser(userName);
 
-        var selectorWrap = $('#helloCategorySelectorWrap').addClass('show');
-        var selector = app.category.selectorBuilder(selectorWrap, false);
-        selector.show();
-        selector.updateFromServer();
+        this.dom.addClass('large-size');
+        this.headDom.find('.user-name > .action-text').text(app.data.getUser());
+    },
 
-        setTimeout(function (hs) {
-            hs.dom.addClass('large-size');
-            hs.headDom.find('.big-title').addClass('left-part');
-            var rightPart = hs.headDom.find('.right-part');
-            rightPart.find('#registrarName').text(app.data.registrarName);
-            rightPart.show();
-        }(this), 200);
+    toggleLogin: function () {
+        this.loginDom.find('#yourName').val(app.data.getUser());
+        this.dom.removeClass('large-size');
+    },
+
+    show: function () {
+        this.wrap.show();
     },
 
     hide: function () {
@@ -94,28 +123,20 @@ app.helloScreen = {
     }
 };
 
-/* Category */
-app.category = {
-    init: function () {},
-
-    currentSelector: null
-};
-
 /* Category > Selector Builder */
-app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
+app.main.categoryList = function (appendingDom) {
     var obj = {};
 
     var dom = $(
-        '<div class="category-list" style="display: none">' +
+        '<div class="category-list">' +
 
         '<div class="list-head">' +
         '<span class="title">书籍类目列表</span>' +
         '<span class="part-right">' +
         '<span class="list-actions">' +
         '<span><a href="/downloadExcel?categoryName=__ALL"><i class="zmdi zmdi-download"></i> 下载数据</a></span>' +
-        '<span id="createCategoryBtn"><i class="zmdi zmdi-plus"></i> 创建类目</span>' +
+        '<span data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建类目</span>' +
         '</span>' +
-        '<span class="close-btn zmdi zmdi-close"></span>' +
         '</span>' +
         '</div>' +
 
@@ -128,7 +149,7 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
     );
 
     // Create Category Btn
-    dom.find('#createCategoryBtn').click(function () {
+    dom.find('[data-toggle="create-category"]').click(function () {
         var categoryName = window.prompt('填入类目名，例如：Z', '');
         if (!!categoryName && String(categoryName).length > 0) {
             app.dialog.build('创建类目', '确定要创建 类目' + appUtils.htmlEncode(categoryName) + ' 吗？', ['确定', function () {
@@ -142,22 +163,13 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
         }
     });
 
-    // Close Btn
-    if (showCloseBtn !== undefined && typeof showCloseBtn === 'boolean' && !showCloseBtn) {
-        dom.find('.close-btn').remove();
-    } else {
-        dom.find('.close-btn').click(function () {
-            obj.hide();
-        });
-    }
-
     obj.getDom = function () {
         return dom;
     };
 
     obj.updateFromServer = function () {
         obj.setLoading(true);
-        app.api.categoriesDownload(function () {
+        app.api.getCategory(function () {
             obj.update();
             obj.setLoading(false);
         }, function () {
@@ -173,14 +185,14 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
             var itemDom = $(
                 '<div class="item" data-category-index="' + index + '">' +
                 '<div class="item-head">' +
-                '<span class="category-name' + (item['registrar_name'] === app.data.registrarName ? ' is-mine' : '') + '">' +
+                '<span class="category-name' + (item['user'] === app.data.getUser() ? ' is-mine' : '') + '">' +
                 appUtils.htmlEncode(item['name'] || "未命名") +
                 (String(item['remarks']).indexOf('已完成') >= 0 ? '  [已完成]' : '') +
                 '</span>' +
                 '</div>' +
                 '<div class="item-desc">' +
-                '<span title="登记员"><i class="zmdi zmdi-account"></i> ' + appUtils.htmlEncode(item['registrar_name'] || "未知") + '</span>' +
-                '<span title="更新时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['update_at']) + '</span>' +
+                '<span title="登记员"><i class="zmdi zmdi-account"></i> ' + appUtils.htmlEncode(item['user'] || "未知") + '</span>' +
+                '<span title="更新时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['updated_at']) + '</span>' +
                 '<span title="创建时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['created_at']) + '</span>' +
                 '</div>' +
                 '</div>'
@@ -195,7 +207,7 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
         var mineCategoryNames = [];
         for (var indexMine in categories) {
             var itemMain = categories[indexMine];
-            if (!!itemMain['registrar_name'] && itemMain['registrar_name'] === app.data.registrarName) {
+            if (!!itemMain['registrar_name'] && itemMain['user'] === app.data.getUser()) {
                 mineCategoryNames.push(itemMain['name']);
                 itemRender(indexMine, itemMain);
             }
@@ -225,7 +237,7 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
             return;
         }
 
-        var categoryRegistrarName = categoryData['registrar_name'] || '';
+        var categoryUser = categoryData['user'] || '';
 
         var startWork = function () {
             obj.setLoading(true);
@@ -254,32 +266,13 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
             });
         };
 
-        if (categoryRegistrarName !== app.data.registrarName) {
-            app.dialog.build('编辑警告', '该类目由 ' + appUtils.htmlEncode(categoryRegistrarName) + ' 全权负责<br/>如果你得到了 ' + appUtils.htmlEncode(categoryName) + '类 图书，请交给他登记<br/>为了防止数据冲突，禁止编辑该类目！', ['返回', function () {}], ['仍然继续', function () {
+        if (categoryUser !== app.data.getUser()) {
+            app.dialog.build('编辑警告', '该类目由 ' + appUtils.htmlEncode(categoryUser) + ' 全权负责<br/>如果你得到了 ' + appUtils.htmlEncode(categoryName) + '类 图书，请交给他登记<br/>为了防止数据冲突，禁止编辑该类目！', ['返回', function () {}], ['仍然继续', function () {
                 startWork();
             }]);
         } else {
             startWork();
         }
-    };
-
-    obj.show = function () {
-        app.category.currentSelector = this;
-        return this.getDom().show();
-    };
-
-    obj.hide = function () {
-        if (app.category.currentSelector === this)
-            app.category.currentSelector = null;
-
-        return this.getDom().hide();
-    };
-
-    obj.remove = function () {
-        if (app.category.currentSelector === this)
-            app.category.currentSelector = null;
-
-        this.getDom().remove();
     };
 
     obj.setLoading = function (isLoading) {
@@ -299,124 +292,148 @@ app.category.selectorBuilder = function (appendingDom, showCloseBtn) {
 };
 
 /* Api */
-app.api = {};
-
-app.api.categoriesDownload = function (onSuccess, onError) {
-    onSuccess = onSuccess || function () {
-    };
-    onError = onError || function () {
-    };
-
-    $.ajax({
-        url: '/getCategories', beforeSend: function () {},
-        success: function (data) {
-            if (!!data['success']) {
-                app.data.categoris = data['data']['categories'];
-                // app.notify.success('类目列表成功更新');
-                onSuccess(data);
-            } else {
-                app.notify.error(data['msg']);
-                onError();
-            }
-        }, error: function () {
-            app.notify.error('网络错误，类目列表无法失败');
-            onError();
+app.api = {
+    responseHandle: function (responseData) {
+        if (!responseData || typeof (responseData) !== 'object' || $.isEmptyObject(responseData)) {
+            app.notify.error('服务器响应数据格式错误');
+            return;
         }
-    });
-};
 
-app.api.booksDownload = function (categoryData, onSuccess, onError) {
-    onSuccess = onSuccess || function () {
-    };
-    onError = onError || function () {
-    };
+        var obj = {};
+        obj.isSuccess = function () {
+            return !!responseData['success'];
+        };
+        obj.getMsg = function () {
+            return responseData['msg'] || '';
+        };
+        obj.checkGetData = function () {
+            if (obj.isSuccess()) {
+                return responseData['data'] || [];
+            } else {
+                app.notify.error(obj.getMsg());
+                return false;
+            }
+        };
 
-    $.ajax({
-        url: '/getCategoryBooks', data: {'categoryName': categoryData['name']}, beforeSend: function () {
+        return obj;
+    },
 
-        }, success: function (data) {
-            console.log(data);
-            if (!!data['success']) {
-                app.data.categoryBooks[categoryData['name']] = data['data']['books'];
+    getCategory: function (onSuccess, onError) {
+        onSuccess = onSuccess || function () {};
+        onError = onError || function () {};
 
-                // 更新类目列表数据
-                for (var i in app.data.categoris) {
-                    var itemCategory = app.data.categoris[i];
-                    if (itemCategory['name'] === categoryData['name']) {
-                        app.data.categoris[i] = data['data']['category'];
-                        break;
-                    }
+        $.ajax({
+            url: '/getCategory', data: {
+                name: ''
+            }, success: function (data) {
+                var resp = app.api.responseHandle(data);
+                data = resp.checkGetData();
+                if (!!data) {
+                    app.data.categoris = data['categories'];
+                    onSuccess(data);
+                } else {
+                    onError();
                 }
-
-                app.notify.success('类目' + categoryData['name'] + ' 图书数据成功获取');
-                onSuccess(data);
-            } else {
-                app.notify.error(data['msg']);
+            }, error: function () {
+                app.notify.error('网络错误，类目列表无法失败');
                 onError();
             }
-        }, error: function () {
-            app.notify.error('网络错误，类目图书无法获取');
-            onError();
-        }
-    });
-};
+        });
+    },
 
-app.api.createCategory = function (categoryName, onSuccess, onError) {
-    onSuccess = onSuccess || function () {
-    };
-    onError = onError || function () {
-    };
+    booksDownload: function (categoryData, onSuccess, onError) {
+        onSuccess = onSuccess || function () {
+        };
+        onError = onError || function () {
+        };
 
-    $.ajax({
-        url: '/createCategory', data: {
-            'categoryName': categoryName,
-            'registrarName': app.data.registrarName
-        }, beforeSend: function () {
+        $.ajax({
+            url: '/getCategoryBooks', data: {'categoryName': categoryData['name']}, beforeSend: function () {
 
-        }, success: function (data) {
-            if (!!data['success']) {
-                app.notify.success(data['msg']);
-                onSuccess(data);
-            } else {
-                app.notify.error(data['msg']);
+            }, success: function (data) {
+                console.log(data);
+                if (!!data['success']) {
+                    app.data.categoryBooks[categoryData['name']] = data['data']['books'];
+
+                    // 更新类目列表数据
+                    for (var i in app.data.categoris) {
+                        var itemCategory = app.data.categoris[i];
+                        if (itemCategory['name'] === categoryData['name']) {
+                            app.data.categoris[i] = data['data']['category'];
+                            break;
+                        }
+                    }
+
+                    app.notify.success('类目' + categoryData['name'] + ' 图书数据成功获取');
+                    onSuccess(data);
+                } else {
+                    app.notify.error(data['msg']);
+                    onError();
+                }
+            }, error: function () {
+                app.notify.error('网络错误，类目图书无法获取');
                 onError();
             }
-        }, error: function () {
-            app.notify.error('网络错误，类目无法创建');
-            onError();
-        }
-    });
-};
+        });
+    },
 
-app.api.uploadData = function (categoryName, categoryBooksArr, onSuccess, onError) {
-    onSuccess = onSuccess || function () {
-    };
-    onError = onError || function () {
-    };
+    createCategory: function (categoryName, onSuccess, onError) {
+        onSuccess = onSuccess || function () {
+        };
+        onError = onError || function () {
+        };
 
-    var data = {};
-    data[categoryName] = categoryBooksArr;
-    var json = JSON.stringify(data);
-    $.ajax({
-        url: '/uploadCategoryBooks', method: 'POST', data: {
-            'registrarName': app.data.registrarName,
-            'booksInCategoriesJson': json
-        }, beforeSend: function () {
+        $.ajax({
+            url: '/createCategory', data: {
+                'categoryName': categoryName,
+                'user': app.data.getUser()
+            }, beforeSend: function () {
 
-        }, success: function (data) {
-            if (!!data['success']) {
-                app.notify.success(data['msg']);
-                onSuccess();
-            } else {
-                app.notify.error(data['msg']);
-                app.notify.error('严重：服务器程序错误，数据无法保存，面临丢失的风险');
+            }, success: function (data) {
+                if (!!data['success']) {
+                    app.notify.success(data['msg']);
+                    onSuccess(data);
+                } else {
+                    app.notify.error(data['msg']);
+                    onError();
+                }
+            }, error: function () {
+                app.notify.error('网络错误，类目无法创建');
                 onError();
             }
-        }, error: function () {
-            app.notify.error('严重：网络错误，数据无法保存，面临丢失的风险');
-            onError();
-        }
-    });
+        });
+    },
+
+    uploadData: function (categoryName, categoryBooksArr, onSuccess, onError) {
+        onSuccess = onSuccess || function () {
+        };
+        onError = onError || function () {
+        };
+
+        var data = {};
+        data[categoryName] = categoryBooksArr;
+        var json = JSON.stringify(data);
+        $.ajax({
+            url: '/uploadCategoryBooks', method: 'POST', data: {
+                'user': app.data.getUser(),
+                'booksInCategoriesJson': json
+            }, beforeSend: function () {
+
+            }, success: function (data) {
+                if (!!data['success']) {
+                    app.notify.success(data['msg']);
+                    onSuccess();
+                } else {
+                    app.notify.error(data['msg']);
+                    app.notify.error('严重：服务器程序错误，数据无法保存，面临丢失的风险');
+                    onError();
+                }
+            }, error: function () {
+                app.notify.error('严重：网络错误，数据无法保存，面临丢失的风险');
+                onError();
+            }
+        });
+    }
 };
 
 /* Work */
@@ -424,7 +441,7 @@ app.work = {
     hot: null,
     dom: $(),
     workTableDom: $(),
-    init: function () {
+    register: function () {
         this.dom = $('#workArea');
         this.workTableDom = $('#workTable');
     },

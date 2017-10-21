@@ -6,42 +6,43 @@
     <title>書記 Online</title>
     <meta name="referrer" content="always">
     <meta name="renderer" content="webkit">
-    <link href="/img/favicon.png" rel="shortcut icon" type="image/x-icon">
+    <link href="/img/ingteresting.png" rel="shortcut icon" type="image/x-icon">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/app.css" rel="stylesheet">
     <link href="/css/material-design-iconic-font.min.css" rel="stylesheet">
-    <link href="/js/handsontable/handsontable.full.css" rel="stylesheet" media="screen">
     <script src="/js/jquery.min.js"></script>
     <script src="/js/app.js"></script>
     <!--[if lt IE 9]>你正在使用的浏览器版本过低，请<a href="/upgrade-browser.html"><strong>升级你的浏览器</strong></a>，获得最佳的浏览体验！<![endif]-->
 </head>
 <body>
     <!-- PageLoaderLayer -->
-    <div class="page-loader-layer anim-fade-out" id="pageLoaderLayer">
-        <div class="page-loader-spinner">
-            <svg viewBox="25 25 50 50">
-                <circle cx="50" cy="50" r="20" fill="none" stroke-width="2" stroke-miterlimit="10"></circle>
-            </svg>
+    <div class="page-loader-layer" id="pageLoaderLayer">
+        <div class="page-loader-img">
+            <img src="/img/ingteresting.png" class="loader-img">
         </div>
         <div class="loading-text"></div>
     </div>
-    <!-- HelloScreen -->
-    <div class="hello-screen-wrap" style="display: none">
-        <div class="hello-screen" id="helloScreen">
-            <div class="hello-head" id="helloHead">
+    
+    <!-- mainScreen -->
+    <div class="main-wrap" style="display: none">
+        <div class="main">
+            
+            <div class="main-head">
                 <div class="big-title">
-                    <span style="color: #2196f3;margin-right: 13px;">書記</span><span style="font-size: 13px">Online</span>
+                    <span class="project-name">書記</span><span class="version-info">Online</span>
                 </div>
-                <div class="right-part" style="display: none">
-                    <span class="your-name"><i class="zmdi zmdi-account"></i><span id="registrarName"></span></span>
+                <div class="head-actions">
+                    <span class="user-name"><i class="zmdi zmdi-account"></i><span class="action-text"></span></span>
                 </div>
             </div>
-            <form class="hello-form" id="helloForm" onsubmit="return false;">
+            
+            <form class="main-login" onsubmit="return false;">
                 <p class="input-hint">填入你的名字，成为一名名副其实的图书登记员吧！</p>
                 <input type="text" id="yourName" class="form-control" placeholder="Your Name ? 填入你的真实名字." autofocus autocomplete="off" />
-                <button class="hello-form-submit">好的</button>
+                <button class="login-submit">好的</button>
             </form>
-            <div class="hello-category-list-wrap" id="helloCategorySelectorWrap"></div>
+            
+            <div class="main-category-list-wrap"></div>
         </div>
     </div>
     <!-- WorkArea -->
@@ -54,7 +55,5 @@
             </div>
         </div>
     </div>
-    
-    <script src="/js/handsontable/handsontable.full.js"></script>
 </body>
 </html>

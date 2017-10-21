@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @mixin \Illuminate\Database\Eloquent\Builder
  * @property string|null $category_name 类目名
- * @property string|null $numbering 序号
+ * @property integer|null $numbering 序号
  * @property string|null $name 书名
  * @property string|null $press 出版社
  * @property string|null $remarks 备注

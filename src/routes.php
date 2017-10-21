@@ -22,7 +22,7 @@ $app->add(function (Request $request, Response $response, $next) {
 });
 
 // Actions
-new App\API($app,
+new App\Api($app,
     $app->getContainer()->get('db'),
     $app->getContainer()->get('renderer'),
     $app->getContainer()->get('logger')

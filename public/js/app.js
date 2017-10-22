@@ -56,7 +56,7 @@ app.main = {
     headDom: $(),
     loginDom: $(),
     categoryListDom: $(),
-    categoryListObj: null,
+    categoryList: null,
 
     register: function () {
         this.dom = $('.main');
@@ -74,8 +74,8 @@ app.main = {
         });
 
         // Category List
-        this.categoryListObj = this.categoryList(this.categoryListDom);
-        this.categoryListObj.updateFromServer(); // Update Category Data
+        this.categoryListInit(this.categoryListDom);
+        this.categoryList.updateFromServer(); // Update Category Data
 
         // Login Check
         if (!!app.data.getUser())
@@ -103,12 +103,25 @@ app.main = {
             app.data.setUser(userName);
 
         this.dom.addClass('large-size');
-        this.headDom.find('.user-name > .action-text').text(app.data.getUser());
+        this.updateHead();
     },
 
     toggleLogin: function () {
         this.loginDom.find('#yourName').val(app.data.getUser());
         this.dom.removeClass('large-size');
+    },
+
+    updateHead: function () {
+        // Update User Info
+        this.headDom.find('.user-name-text').text(app.data.getUser());
+
+        var headBookTotalText = app.main.headDom.find('.book-total-text');
+        headBookTotalText.text('加载中...');
+        app.api.getUser(app.data.getUser(), function (data) {
+            headBookTotalText.text(data['book_total'] + ' 本书');
+        }, function () {
+            headBookTotalText.text('获取失败...');
+        });
     },
 
     show: function () {
@@ -121,7 +134,7 @@ app.main = {
 };
 
 /* Category > Selector Builder */
-app.main.categoryList = function (appendingDom) {
+app.main.categoryListInit = function (appendingDom) {
     var obj = {};
 
     var dom = $(
@@ -134,6 +147,7 @@ app.main.categoryList = function (appendingDom) {
         '<input type="text" class="form-control" placeholder="搜索类目..." autocomplete="off" spellcheck="false">' +
         '</span>' +
         '<span class="list-actions">' +
+        '<span data-toggle="refresh-data"><i class="zmdi zmdi-refresh"></i> 刷新</span>' +
         '<span><a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 下载数据</a></span>' +
         '<span data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建类目</span>' +
         '</span>' +
@@ -153,6 +167,11 @@ app.main.categoryList = function (appendingDom) {
         app.main.createCategoryDialog();
     });
 
+    // Refresh Data Btn
+    dom.find('[data-toggle="refresh-data"]').click(function () {
+        app.main.categoryList.updateFromServer();
+    });
+
     // Category Search
     dom.find('.list-search > input').bind('input propertychange', function() {
         var value = $.trim($(this).val());
@@ -164,9 +183,9 @@ app.main.categoryList = function (appendingDom) {
                     categoryData[i] = item;
                 }
             }
-            app.main.categoryListObj.update(categoryData);
+            app.main.categoryList.update(categoryData);
         } else {
-            app.main.categoryListObj.update();
+            app.main.categoryList.update();
         }
     });
 
@@ -182,6 +201,8 @@ app.main.categoryList = function (appendingDom) {
         }, function () {
             obj.setLoading(false);
         });
+
+        app.main.updateHead();
     };
 
     obj.update = function (categoryData) {
@@ -271,7 +292,7 @@ app.main.categoryList = function (appendingDom) {
 
     dom.appendTo(appendingDom);
 
-    return obj;
+    this.categoryList = obj;
 };
 
 app.main.createCategoryDialog = function () {
@@ -300,11 +321,11 @@ app.main.createCategoryDialog = function () {
         var inputVal = $.trim(input.val());
         if (inputVal.length <= 0) { input.focus();return; }
         app.dialog.build('创建新的类目', '请确认类目名 ' + appUtils.htmlEncode(inputVal) + ' 准确无误', ['立刻创建', function () {
-            app.main.categoryListObj.setLoading(true);
+            app.main.categoryList.setLoading(true);
             app.api.categoryCreate(inputVal, function () {
-                app.main.categoryListObj.updateFromServer();
+                app.main.categoryList.updateFromServer();
             }, function () {
-                app.main.categoryListObj.updateFromServer();
+                app.main.categoryList.updateFromServer();
             });
             dom.remove();
         }], ['返回修改']);
@@ -394,6 +415,30 @@ app.api = {
         };
 
         return obj;
+    },
+
+    getUser: function (user, onSuccess, onError) {
+        onSuccess = onSuccess || function () {};
+        onError = onError || function () {};
+
+        user = user || app.data.getUser();
+
+        $.ajax({
+            url: '/getUser', data: {
+                user: user
+            }, success: function (data) {
+                var resp = app.api.responseHandle(data);
+                data = resp.checkGetData();
+                if (!!data) {
+                    onSuccess(data);
+                } else {
+                    onError();
+                }
+            }, error: function () {
+                app.notify.error('网络错误，用户资料无法失败');
+                onError();
+            }
+        });
     },
 
     handleCategoryData: function (item) {

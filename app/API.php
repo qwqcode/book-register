@@ -25,6 +25,7 @@ class Api extends ApiBase
         return [
             ['GET', '/', 'index'],
             ['GET', '/getTime', 'getTime'],
+            ['GET', '/getUser', 'getUser'],
             ['GET', '/getCategory', 'getCategory'],
             ['POST', '/uploadCategory', 'uploadCategory'],
             ['GET', '/categoryCreate', 'categoryCreate'],
@@ -51,9 +52,40 @@ class Api extends ApiBase
     public function getTime(Request $request, Response $response, $args)
     {
         return $this->success($response, '获取服务器时间成功', [
-            'success'     => true,
             'time'        => time(),
             'time_format' => date('Y-m-d H:i:s', time()),
+        ]);
+    }
+    
+    /**
+     * 获取用户资料
+     *
+     * @inheritdoc
+     */
+    public function getUser(Request $request, Response $response, $args)
+    {
+        $user = trim($request->getParam('user'));
+    
+        if (empty($user))
+            return $this->error($response, '参数 user 是必须的');
+        
+        $categoryTotal = 0;
+        $bookTotal = 0;
+        
+        $categories = $this->tableCategory()->where(['user' => $user]);
+        if ($categories->exists()) {
+            $categoryTotal = $categories->count();
+            
+            // Find books
+            $books = $this->tableBook()->where(['user' => $user])->where('name', '!=', '');
+            if ($books->exists()) {
+                $bookTotal = $books->count();
+            }
+        }
+        
+        return $this->success($response, '获取用户资料成功', [
+            'category_total' => $categoryTotal,
+            'book_total'     => $bookTotal,
         ]);
     }
     

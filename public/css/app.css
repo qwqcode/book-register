@@ -159,18 +159,22 @@ a {
     text-align: center;
 }
 
-.main-head .head-actions .user-name {
+.main-head .head-actions > span {
     cursor: pointer;
     transition: all .2s ease-in-out;
     color: #6a6f82;
     font-size: 14px;
 }
 
-.main-head .head-actions .user-name:hover {
+.main-head .head-actions > span:not(:last-child) {
+    margin-right: 20px;
+}
+
+.main-head .head-actions > span:hover {
     color: #2196f3;
 }
 
-.main-head .head-actions .user-name > i {
+.main-head .head-actions > span > i {
     color: #2196f3;
     margin-right: 8px;
 }
@@ -301,7 +305,7 @@ a {
     box-shadow: none;
     padding: 4px 1pc;
     background: #f1f2f4;
-    border-radius: 33px;
+    border-radius: 2px;
     height: 100%;
 }
 

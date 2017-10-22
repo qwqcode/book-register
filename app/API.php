@@ -27,7 +27,7 @@ class Api extends ApiBase
             ['GET', '/getTime', 'getTime'],
             ['GET', '/getCategory', 'getCategory'],
             ['POST', '/uploadCategory', 'uploadCategory'],
-            ['GET', '/createCategory', 'createCategory'],
+            ['GET', '/categoryCreate', 'categoryCreate'],
             
             ['GET', '/categoryExcel[/{name}]', 'categoryExcel'],
         ];

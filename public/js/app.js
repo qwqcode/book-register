@@ -133,8 +133,11 @@ app.main.categoryList = function (appendingDom) {
         '<div class="list-head">' +
         '<span class="title">书籍类目列表</span>' +
         '<span class="part-right">' +
+        '<span class="list-search">' +
+        '<input type="text" class="form-control" placeholder="搜索类目..." autocomplete="off" spellcheck="false">' +
+        '</span>' +
         '<span class="list-actions">' +
-        '<span><a href="/downloadExcel?categoryName=__ALL"><i class="zmdi zmdi-download"></i> 下载数据</a></span>' +
+        '<span><a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 下载数据</a></span>' +
         '<span data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建类目</span>' +
         '</span>' +
         '</span>' +
@@ -150,16 +153,23 @@ app.main.categoryList = function (appendingDom) {
 
     // Create Category Btn
     dom.find('[data-toggle="create-category"]').click(function () {
-        var categoryName = window.prompt('填入类目名，例如：Z', '');
-        if (!!categoryName && String(categoryName).length > 0) {
-            app.dialog.build('创建类目', '确定要创建 类目' + appUtils.htmlEncode(categoryName) + ' 吗？', ['确定', function () {
-                obj.setLoading(true);
-                app.api.createCategory($.trim(categoryName), function () {
-                    obj.updateFromServer();
-                }, function () {
-                    obj.updateFromServer();
-                });
-            }], ['取消']);
+        app.main.createCategoryDialog();
+    });
+
+    // Category Search
+    dom.find('.list-search > input').bind('input propertychange', function() {
+        var value = $.trim($(this).val());
+        if (value.length > 0) {
+            var categoryData = [];
+            for (var i in app.data.categoris) {
+                var item = app.data.categoris[i];
+                if ($.trim(item['name']).toUpperCase().indexOf(value) >= 0) {
+                    categoryData[i] = item;
+                }
+            }
+            app.main.categoryListObj.update(categoryData);
+        } else {
+            app.main.categoryListObj.update();
         }
     });
 
@@ -177,17 +187,18 @@ app.main.categoryList = function (appendingDom) {
         });
     };
 
-    obj.update = function () {
+    obj.update = function (categoryData) {
         var contentDom = dom.find('.list-content');
-        var categories = app.data.categoris;
+        var categories = categoryData || app.data.categoris;
         contentDom.html('');
         var itemRender = function (index, item) {
             var itemDom = $(
-                '<div class="item" data-category-index="' + index + '">' +
+                '<div class="item' + (item.isMine() ? ' is-mine' : '') + '' +
+                (String(item['remarks']).indexOf('已完成') >= 0 ? ' is-completed' : '') +
+                '" data-category-index="' + index + '">' +
                 '<div class="item-head">' +
-                '<span class="category-name' + (item['user'] === app.data.getUser() ? ' is-mine' : '') + '">' +
+                '<span class="category-name">' +
                 appUtils.htmlEncode(item['name'] || "未命名") +
-                (String(item['remarks']).indexOf('已完成') >= 0 ? '  [已完成]' : '') +
                 '</span>' +
                 '</div>' +
                 '<div class="item-desc">' +
@@ -204,21 +215,16 @@ app.main.categoryList = function (appendingDom) {
         };
 
         // 我负责的
-        var mineCategoryNames = [];
         for (var indexMine in categories) {
-            var itemMain = categories[indexMine];
-            if (!!itemMain['registrar_name'] && itemMain['user'] === app.data.getUser()) {
-                mineCategoryNames.push(itemMain['name']);
-                itemRender(indexMine, itemMain);
-            }
+            var itemMine = categories[indexMine];
+            if (!itemMine.isMine()) continue;
+            itemRender(indexMine, itemMine);
         }
         // 非我负责的
-        for (var indexAll in categories) {
-            var item = categories[indexAll];
-            if (mineCategoryNames.indexOf(item['name']) > -1)
-                continue;
-
-            itemRender(indexAll, item);
+        for (var index in categories) {
+            var item = categories[index];
+            if (item.isMine()) continue;
+            itemRender(index, item);
         }
 
         return true;
@@ -291,6 +297,45 @@ app.main.categoryList = function (appendingDom) {
     return obj;
 };
 
+app.main.createCategoryDialog = function () {
+    var dom = $(
+        '<div class="create-category-dialog-layer anim-fade-in">' +
+        '<div class="create-category-dialog">' +
+
+        '<div class="dialog-head">' +
+        '<div class="dialog-title">创建新的类目</div>' +
+        '<span class="dialog-close-btn"></span>' +
+        '</div>' +
+
+        '<form class="create-category-form" onsubmit="return false;">' +
+        '<input type="text" id="categoryName" class="form-control" placeholder="输入类目名，例如：Z3" autocomplete="off" spellcheck="false">' +
+        '<button type="submit" class="create-category-submit">好的</button>' +
+        '</form>' +
+
+        '</div>' +
+        '</div>'
+    );
+    dom.find('.dialog-close-btn').click(function () {
+        dom.remove();
+    });
+    dom.find('.create-category-form').submit(function () {
+        var input = dom.find('#categoryName');
+        var inputVal = $.trim(input.val());
+        if (inputVal.length <= 0) { input.focus();return; }
+        app.dialog.build('创建新的类目', '请确认类目名 ' + appUtils.htmlEncode(inputVal) + ' 准确无误', ['立刻创建', function () {
+            app.main.categoryListObj.setLoading(true);
+            app.api.categoryCreate(inputVal, function () {
+                app.main.categoryListObj.updateFromServer();
+            }, function () {
+                app.main.categoryListObj.updateFromServer();
+            });
+            dom.remove();
+        }], ['返回修改']);
+    });
+
+    dom.appendTo('body');
+};
+
 /* Api */
 app.api = {
     responseHandle: function (responseData) {
@@ -314,6 +359,15 @@ app.api = {
                 return false;
             }
         };
+        obj.checkMakeNotify = function () {
+            if (obj.isSuccess()) {
+                app.notify.success(obj.getMsg());
+                return true;
+            } else {
+                app.notify.error(obj.getMsg());
+                return false;
+            }
+        };
 
         return obj;
     },
@@ -329,6 +383,12 @@ app.api = {
                 var resp = app.api.responseHandle(data);
                 data = resp.checkGetData();
                 if (!!data) {
+                    for (var i in data['categories']) {
+                        var item = data['categories'][i];
+                        item.isMine = function () {
+                            return !!this.user && this.user === app.data.getUser();
+                        }
+                    }
                     app.data.categoris = data['categories'];
                     onSuccess(data);
                 } else {
@@ -336,6 +396,28 @@ app.api = {
                 }
             }, error: function () {
                 app.notify.error('网络错误，类目列表无法失败');
+                onError();
+            }
+        });
+    },
+
+    categoryCreate: function (categoryName, onSuccess, onError) {
+        onSuccess = onSuccess || function () {};
+        onError = onError || function () {};
+
+        $.ajax({
+            url: '/categoryCreate', data: {
+                'name': categoryName,
+                'user': app.data.getUser()
+            }, success: function (data) {
+                var resp = app.api.responseHandle(data);
+                if (resp.checkMakeNotify()) {
+                    onSuccess(data);
+                } else {
+                    onError();
+                }
+            }, error: function () {
+                app.notify.error('网络错误，类目无法创建');
                 onError();
             }
         });
@@ -372,33 +454,6 @@ app.api = {
                 }
             }, error: function () {
                 app.notify.error('网络错误，类目图书无法获取');
-                onError();
-            }
-        });
-    },
-
-    createCategory: function (categoryName, onSuccess, onError) {
-        onSuccess = onSuccess || function () {
-        };
-        onError = onError || function () {
-        };
-
-        $.ajax({
-            url: '/createCategory', data: {
-                'categoryName': categoryName,
-                'user': app.data.getUser()
-            }, beforeSend: function () {
-
-            }, success: function (data) {
-                if (!!data['success']) {
-                    app.notify.success(data['msg']);
-                    onSuccess(data);
-                } else {
-                    app.notify.error(data['msg']);
-                    onError();
-                }
-            }, error: function () {
-                app.notify.error('网络错误，类目无法创建');
                 onError();
             }
         });

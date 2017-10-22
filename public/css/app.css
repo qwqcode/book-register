@@ -96,6 +96,7 @@ a {
     padding: 10px 35px;
     border-bottom: 1px solid #F4F4F4;
     text-align: left;
+    text-align: center;
 }
 
 .main.large-size .main-head .project-name {
@@ -105,7 +106,7 @@ a {
 
 .main.large-size .main-head .version-info {
     font-size: 13px;
-    margin-left: 5px;
+    margin-left: 10px;
     color: #718ab9;
 }
 
@@ -154,8 +155,8 @@ a {
     width: 100%;
     line-height: 35px;
     padding-right: 50px;
-    text-align: left;
     padding: 2px 35px;
+    text-align: center;
 }
 
 .main-head .head-actions .user-name {
@@ -233,10 +234,10 @@ a {
 .main-category-list-wrap {
     display: none;
     height: calc(100% - 80px);
-    padding-left: 30px;
-    padding-right: 30px;
     padding-top: 35px;
     padding-bottom: 35px;
+    max-width: 1266px;
+    margin: 0 auto;
 }
 
 /* category-list */
@@ -253,20 +254,27 @@ a {
 }
 
 .category-list .list-head {
-    padding: 15px 25px;
+    position: relative;
     border-bottom: 1px solid #F4F4F4;
-    padding-bottom: 15px;
+    height: 65px;
+    overflow: hidden;
+    display: flex;
+    flex-flow: row;
 }
 
 .category-list .list-head .title {
-    font-size: 16px;
-    line-height: 20px;
+    display: flex;
+    flex: 1;
+    font-size: 18px;
+    line-height: 34px;
+    padding: 15px 25px;
 }
 
 .category-list .list-head .part-right {
-    float: right;
-    line-height: 20px;
+    flex: 4;
     font-size: 16px;
+    padding: 15px 25px;
+    text-align: right;
 }
 
 .category-list .list-head .part-right > *:not(:last-child) {
@@ -282,6 +290,24 @@ a {
 
 .category-list .list-head .close-btn:hover {
     color: #ff6f6c;
+}
+
+.category-list .list-head .list-search {
+    display: inline-block;
+}
+
+.category-list .list-head .list-search > .form-control {
+    display: block;
+    border: 1px solid #efefef;
+    box-shadow: none;
+    padding: 4px 1pc;
+    background: #f1f2f4;
+    border-radius: 33px;
+    height: 100%;
+}
+
+.category-list .list-head .list-search > .form-control:focus {
+    border: 1px solid #2196F3;
 }
 
 .category-list .list-head .list-actions {
@@ -323,6 +349,7 @@ a {
 }
 
 .category-list .list-content .item {
+    position: relative;
     background: #FFF;
     padding: 15px 25px;
     border-bottom: 1px solid #F4F4F4;
@@ -342,14 +369,6 @@ a {
     color: #2196f3;
 }
 
-.category-list .list-content .item .item-head .category-name.is-mine:before {
-    content: '\f27d';
-    font: normal normal normal 14px/1 'Material-Design-Iconic-Font';
-    display: inline-block;
-    margin-right: 7px;
-    color: #FFB300;
-}
-
 .category-list .list-content .item .item-desc {
     margin-top: 10px;
 }
@@ -364,6 +383,24 @@ a {
     margin-right: 2px;
 }
 
+.category-list .list-content .item.is-mine:before {
+    content: '';
+    position: absolute;
+    width: 3px;
+    height: calc(100% - 6px - 1px);
+    top: 3px;
+    left: 0px;
+    background: #2196f3;
+}
+
+.category-list .list-content .item.is-completed .item-head:before {
+    content: '\f108';
+    font-family: 'Material-Design-Iconic-Font';
+    display: inline-block;
+    margin-right: 15px;
+    color: #00BCD4;
+}
+
 .category-list .list-loading {
     display: flex;
     position: absolute;
@@ -374,6 +411,94 @@ a {
     justify-content: center;
     background: rgba(255, 255, 255, 0.72);
     transition: background 0.15s ease-in-out;
+}
+
+/* .create-category-dialog-layer */
+.create-category-dialog-layer {
+    display: flex;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    transition: background 0.15s ease-in-out;
+}
+
+.create-category-dialog {
+    background: #FFF;
+    background-color: #fff;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 2px;
+    width: 400px;
+}
+
+.create-category-dialog .dialog-head {
+    border-bottom: 1px solid #F4F4F4;
+    padding-bottom: 15px;
+}
+
+.create-category-dialog .dialog-title {
+    display: inline-block;
+}
+
+.create-category-dialog .dialog-close-btn {
+    display: inline-block;
+    float: right;
+    width: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: .3s all;
+}
+
+.create-category-dialog .dialog-close-btn:before {
+    content: '\f136';
+    font-family: 'Material-Design-Iconic-Font';
+}
+
+.create-category-dialog .dialog-close-btn:hover {
+    color: #03a9f4;
+}
+
+.create-category-dialog .create-category-form {
+    color: #5E5E5E;
+    margin-top: 20px;
+}
+
+.create-category-dialog .create-category-form .form-control {
+    border-radius: 3px;
+    border: 1px solid #EEE;
+    padding: 5px 15px;
+    width: 100%;
+    margin-top: 10px;
+    text-align: center;
+    outline: none;
+    transition: .3s all;
+    box-shadow: none;
+}
+
+.create-category-dialog .create-category-form .form-control:focus {
+    border: 1px solid #03a9f4;
+}
+
+.create-category-dialog .create-category-submit {
+    margin-top: 17px;
+    float: right;
+    padding: 6px 20px;
+    cursor: pointer;
+    border-radius: 3px;
+    box-shadow: 0 1px 4px rgba(177, 177, 177, 0.36);
+    border: 0;
+    background: #03A9F4;
+    color: #FFF;
+    transition: .3s all;
+    outline: none;
+}
+
+.create-category-dialog .create-category-submit:active {
+    background: #0095d8;
 }
 
 /* work-area */

@@ -4,6 +4,7 @@ $(document).ready(function () {
 
     app.data.register();
     app.main.register();
+    app.editor.register();
 
     app.notify.info('程序初始化完毕');
     app.notify.setShowEnabled(true);
@@ -45,11 +46,7 @@ app.data = {
         this.user = null;
         window.localStorage ? localStorage.removeItem('user') : null;
     },
-    categoris: {},
-    categoryBooks: {},
-    currentCategoryIndex: null,
-    currentCategoryName: null,
-    workCategoryIsSaved: false
+    categoris: {}
 };
 
 /* Main */
@@ -233,7 +230,7 @@ app.main.categoryList = function (appendingDom) {
     obj.onItemClick = function (categoryDataIndex) {
         var categoryData = app.data.categoris[categoryDataIndex];
         if (!categoryData) {
-            app.notify.error('不存在的类目，Index=' + categoryDataIndex);
+            app.notify.error('类目是不存在的，index=' + categoryDataIndex);
             return;
         }
 
@@ -243,42 +240,22 @@ app.main.categoryList = function (appendingDom) {
             return;
         }
 
-        var categoryUser = categoryData['user'] || '';
-
         var startWork = function () {
             obj.setLoading(true);
-            app.api.booksDownload(categoryData, function () {
+            app.api.getCategoryBooks(categoryDataIndex, function () {
                 // 当图书数据下载完毕
                 obj.update();
                 obj.setLoading(false);
 
-                if (!app.data.categoryBooks.hasOwnProperty(categoryName)) {
-                    app.notify.error('真是奇怪呐... 未找到 app.data.categories 中的该类目数据');
-                    return;
-                }
-
-                var categoryBooks = app.data.categoryBooks[categoryName];
-
-                app.data.currentCategoryIndex = categoryDataIndex;
-                app.data.currentCategoryName = categoryName;
-
                 // 正式开始工作
-                app.work.show();
-                app.work.newTable(app.work.handleBooksTableUse(categoryName, categoryBooks));
-
+                app.editor.startWork(categoryDataIndex);
             }, function () {
                 obj.setLoading(false);
                 app.notify.error('无法打开该类目');
             });
         };
 
-        if (categoryUser !== app.data.getUser()) {
-            app.dialog.build('编辑警告', '该类目由 ' + appUtils.htmlEncode(categoryUser) + ' 全权负责<br/>如果你得到了 ' + appUtils.htmlEncode(categoryName) + '类 图书，请交给他登记<br/>为了防止数据冲突，禁止编辑该类目！', ['返回', function () {}], ['仍然继续', function () {
-                startWork();
-            }]);
-        } else {
-            startWork();
-        }
+        startWork();
     };
 
     obj.setLoading = function (isLoading) {
@@ -336,6 +313,53 @@ app.main.createCategoryDialog = function () {
     dom.appendTo('body');
 };
 
+/* Editor */
+app.editor = {
+    currentCategoryIndex: null,
+    currentCategoryName: null,
+    isSaved: false,
+    localData: [],
+    localStorageKey: 'editor_local_data',
+
+    dom: $(),
+    wrapDom: $(),
+    inserterDom: $(),
+    bookListDom: $(),
+
+    register: function () {
+        if (window.localStorage)
+            this.localData = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
+
+        this.dom = $('.editor');
+        this.wrapDom = $('.editor-wrap');
+        this.inserterDom = $('.editor-inserter');
+        this.bookListDom = $('.editor-book-list');
+    },
+    startWork: function (categoryDataIndex) {
+        var category = app.data.categoris[categoryDataIndex];
+        if (!category) {
+            app.notify.error('类目是不存在的，index=' + categoryDataIndex);
+            return;
+        }
+
+        this.currentCategoryIndex = categoryDataIndex;
+        this.currentCategoryName = category['name'];
+        this.isSaved = false;
+
+        app.main.hide();
+        this.wrapDom.show();
+
+        // Inserter
+        // TODO: INPUTS
+    },
+    localDataLocalStorage: function () {
+        window.localStorage ? localStorage.setItem(this.localStorageKey, JSON.stringify(this.localData)) : null;
+    },
+    exit: function () {
+        this.wrapDom.hide();
+    }
+};
+
 /* Api */
 app.api = {
     responseHandle: function (responseData) {
@@ -372,6 +396,12 @@ app.api = {
         return obj;
     },
 
+    handleCategoryData: function (item) {
+        item.isMine = function () {
+            return !!this.user && this.user === app.data.getUser();
+        }
+    },
+
     getCategory: function (onSuccess, onError) {
         onSuccess = onSuccess || function () {};
         onError = onError || function () {};
@@ -385,9 +415,7 @@ app.api = {
                 if (!!data) {
                     for (var i in data['categories']) {
                         var item = data['categories'][i];
-                        item.isMine = function () {
-                            return !!this.user && this.user === app.data.getUser();
-                        }
+                        app.api.handleCategoryData(item);
                     }
                     app.data.categoris = data['categories'];
                     onSuccess(data);
@@ -423,37 +451,33 @@ app.api = {
         });
     },
 
-    booksDownload: function (categoryData, onSuccess, onError) {
-        onSuccess = onSuccess || function () {
-        };
-        onError = onError || function () {
-        };
+    getCategoryBooks: function (categoryDataIndex, onSuccess, onError) {
+        onSuccess = onSuccess || function () {};
+        onError = onError || function () {};
+
+        if (!app.data.categoris.hasOwnProperty(categoryDataIndex)) {
+            app.notify.error('找不到 index=' + categoryDataIndex + ' 的类目');
+            return;
+        }
+
+        var categoryData = app.data.categoris[categoryDataIndex];
 
         $.ajax({
-            url: '/getCategoryBooks', data: {'categoryName': categoryData['name']}, beforeSend: function () {
-
+            url: '/getCategory', data: {
+                'name': categoryData['name']
             }, success: function (data) {
-                console.log(data);
-                if (!!data['success']) {
-                    app.data.categoryBooks[categoryData['name']] = data['data']['books'];
-
+                var resp = app.api.responseHandle(data);
+                data = resp.checkGetData();
+                if (!!data) {
                     // 更新类目列表数据
-                    for (var i in app.data.categoris) {
-                        var itemCategory = app.data.categoris[i];
-                        if (itemCategory['name'] === categoryData['name']) {
-                            app.data.categoris[i] = data['data']['category'];
-                            break;
-                        }
-                    }
-
-                    app.notify.success('类目' + categoryData['name'] + ' 图书数据成功获取');
+                    app.data.categoris[categoryDataIndex] = data['categories'][0];
+                    app.api.handleCategoryData(app.data.categoris[categoryDataIndex]);
                     onSuccess(data);
                 } else {
-                    app.notify.error(data['msg']);
                     onError();
                 }
             }, error: function () {
-                app.notify.error('网络错误，类目图书无法获取');
+                app.notify.error('网络错误，类目图书无法下载');
                 onError();
             }
         });

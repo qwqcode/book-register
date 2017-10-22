@@ -256,10 +256,11 @@ a {
 .category-list .list-head {
     position: relative;
     border-bottom: 1px solid #F4F4F4;
-    height: 65px;
+    /* height: 65px; */
     overflow: hidden;
     display: flex;
     flex-flow: row;
+    padding: 15px 25px;
 }
 
 .category-list .list-head .title {
@@ -267,13 +268,11 @@ a {
     flex: 1;
     font-size: 18px;
     line-height: 34px;
-    padding: 15px 25px;
 }
 
 .category-list .list-head .part-right {
     flex: 4;
     font-size: 16px;
-    padding: 15px 25px;
     text-align: right;
 }
 
@@ -499,6 +498,99 @@ a {
 
 .create-category-dialog .create-category-submit:active {
     background: #0095d8;
+}
+
+/* editor */
+.editor-wrap {}
+
+.editor {
+    background: #FFF;
+}
+
+.editor .editor-inserter {
+    display: flex;
+    flex-direction: row;
+    line-height: 35px;
+    padding: 15px 30px;
+}
+
+.editor .editor-inserter .numbering-controller {
+    line-height: 35px;
+    display: flex;
+    flex-direction: row;
+    flex-basis: 90px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.editor .editor-inserter .numbering-controller.left-part {
+    flex-basis: 140px;
+}
+
+.editor .editor-inserter .numbering-controller.right-part {}
+
+.editor .editor-inserter .current-numbring {
+    flex-basis: 70px;
+    margin: 0 5px;
+    overflow: hidden;
+    font-size: 19px;
+    color: #2196F3;
+    text-overflow: ellipsis;
+}
+
+.editor .editor-inserter .pre-book-btn,
+.editor .editor-inserter .nxt-book-btn {
+    flex: 1;
+    margin: 0 5px;
+    cursor: pointer;
+    transition: .3s all;
+    border-radius: 2px;
+    border: 0;
+    background: #FFF;
+    line-height: initial;
+}
+
+.editor .editor-inserter .pre-book-btn:hover,
+.editor .editor-inserter .nxt-book-btn:hover {
+    background: #2196F3;
+    color: #FFF;
+}
+
+.editor .editor-inserter .pre-book-btn:before,
+.editor .editor-inserter .nxt-book-btn:before {
+    font-family: 'Material-Design-Iconic-Font';
+}
+
+.editor .editor-inserter .pre-book-btn:before {
+    content: '\f2fa';
+}
+
+.editor .editor-inserter .nxt-book-btn:before {
+    content: '\f2fb';
+}
+
+.editor .editor-inserter .fields-inputs {
+    display: flex;
+    width: 1000px;
+    flex: 1;
+    height: 35px;
+    line-height: 35px;
+    align-items: center;
+    margin: 0 10px;
+}
+
+.editor .editor-inserter .fields-inputs > .form-control {
+    display: inline-block;
+    flex: 1;
+    border: 1px solid #f3f3f3;
+    box-shadow: none;
+    border-radius: 1px;
+    height: 35px;
+    line-height: 30px;
+}
+
+.editor .editor-inserter .fields-inputs > .form-control:not(:last-child) {
+    margin-right: 5px;
 }
 
 /* work-area */

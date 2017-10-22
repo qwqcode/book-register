@@ -73,7 +73,7 @@ class Api extends ApiBase
             $categories = $categoriesTable->where(['name' => $name]);
             if (!$categories->exists())
                 return $this->error($response, '该类目不存在');
-            $categories = $categories->get();
+            $categories = $categories->limit(1)->get();
         }
         else {
             $categories = $categoriesTable->get();

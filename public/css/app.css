@@ -505,10 +505,23 @@ a {
 }
 
 /* editor */
-.editor-wrap {}
+.editor-wrap {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-items: center;
+    overflow: hidden;
+}
 
 .editor {
+    position: relative;
     background: #FFF;
+    margin: 0 auto;
+    max-width: 1200px;
+    height: 93%;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .editor .editor-inserter {
@@ -516,10 +529,12 @@ a {
     flex-direction: row;
     line-height: 35px;
     padding: 15px 30px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.075);
 }
 
 .editor .editor-inserter .numbering-controller {
     line-height: 35px;
+    height: 35px;
     display: flex;
     flex-direction: row;
     flex-basis: 90px;
@@ -527,24 +542,23 @@ a {
     vertical-align: middle;
 }
 
-.editor .editor-inserter .numbering-controller.left-part {
-    flex-basis: 140px;
+.editor .editor-inserter .numbering-controller.left-part {flex-basis: auto;}
+
+.editor .editor-inserter .numbering-controller.right-part {
+    flex-basis: 50px;
 }
 
-.editor .editor-inserter .numbering-controller.right-part {}
-
 .editor .editor-inserter .current-numbring {
-    flex-basis: 70px;
-    margin: 0 5px;
-    overflow: hidden;
-    font-size: 19px;
+    margin-right: 15px;
+    font-size: 100%;
     color: #2196F3;
-    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: break-all;
 }
 
 .editor .editor-inserter .pre-book-btn,
 .editor .editor-inserter .nxt-book-btn {
-    flex: 1;
+    width: 50px;
     margin: 0 5px;
     cursor: pointer;
     transition: .3s all;
@@ -552,11 +566,20 @@ a {
     border: 0;
     background: #FFF;
     line-height: initial;
+    outline: none;
 }
 
 .editor .editor-inserter .pre-book-btn:hover,
-.editor .editor-inserter .nxt-book-btn:hover {
+.editor .editor-inserter .nxt-book-btn:hover,
+.editor .editor-inserter .pre-book-btn:focus,
+.editor .editor-inserter .nxt-book-btn:focus {
     background: #2196F3;
+    color: #FFF;
+}
+
+.editor .editor-inserter .pre-book-btn:active,
+.editor .editor-inserter .nxt-book-btn:active {
+    background: #00acf7;
     color: #FFF;
 }
 
@@ -576,7 +599,7 @@ a {
 .editor .editor-inserter .fields-inputs {
     display: flex;
     width: 1000px;
-    flex: 1;
+    flex: 8;
     height: 35px;
     line-height: 35px;
     align-items: center;
@@ -595,6 +618,17 @@ a {
 
 .editor .editor-inserter .fields-inputs > .form-control:not(:last-child) {
     margin-right: 5px;
+}
+
+.editor .editor-inserter .fields-inputs > .form-control:focus {
+    border: 1px solid #2196F3;
+}
+
+.editor .editor-book-list {
+    height: calc(100% - 65px);
+    width: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 /* work-area */

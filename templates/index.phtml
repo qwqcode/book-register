@@ -51,9 +51,9 @@
     <!-- Editor -->
     <div class="editor-wrap" style="display: none">
         <div class="editor">
-            <form class="editor-inserter" onsubmit="alert('下一本书');return false;">
+            <form class="editor-inserter" onsubmit="return false;">
                 <div class="numbering-controller left-part">
-                    <span class="current-numbring">0</span>
+                    <span class="current-numbring">?</span>
                     <button type="button" class="pre-book-btn"></button>
                 </div>
                 <div class="fields-inputs">
@@ -66,9 +66,7 @@
                 </div>
             </form>
             <div class="editor-book-list">
-                <div class="list-content">
-                
-                </div>
+                <div class="list-content"></div>
             </div>
         </div>
     </div>

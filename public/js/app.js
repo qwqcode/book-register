@@ -337,15 +337,25 @@ app.main.createCategoryDialog = function () {
 /* Editor */
 app.editor = {
     currentCategoryIndex: null,
-    currentCategoryName: null,
+    currentCategoryObj: null,
     isSaved: false,
+    currentBookIndex: 0,
     localData: [],
     localStorageKey: 'editor_local_data',
 
     dom: $(),
     wrapDom: $(),
     inserterDom: $(),
+    inputDoms: {
+        name: $(),
+        press: $(),
+        remarks: $()
+    },
+    bookNumbringDom: $(),
+    preBookBtnDom: $(),
+    nxtBookBtnDom: $(),
     bookListDom: $(),
+    bookListContentDom: $(),
 
     register: function () {
         if (window.localStorage)
@@ -353,31 +363,123 @@ app.editor = {
 
         this.dom = $('.editor');
         this.wrapDom = $('.editor-wrap');
+
         this.inserterDom = $('.editor-inserter');
+        this.inputDoms.name = this.inserterDom.find('[name="name"]');
+        this.inputDoms.press = this.inserterDom.find('[name="press"]');
+        this.inputDoms.remarks = this.inserterDom.find('[name="remarks"]');
+        this.bookNumbringDom = this.inserterDom.find('.current-numbring');
+        this.preBookBtnDom = this.inserterDom.find('.pre-book-btn');
+        this.nxtBookBtnDom = this.inserterDom.find('.nxt-book-btn');
+
         this.bookListDom = $('.editor-book-list');
+        this.bookListContentDom = this.bookListDom.find('.list-content');
     },
     startWork: function (categoryDataIndex) {
         var category = app.data.categoris[categoryDataIndex];
         if (!category) {
-            app.notify.error('类目是不存在的，index=' + categoryDataIndex);
-            return;
+            app.notify.error('类目是不存在的，index=' + categoryDataIndex);return;
+        }
+        var categoryName = category['name'];
+        if (!categoryName || typeof(categoryName) !== 'string' || $.trim(categoryName).length <= 0) {
+            app.notify.error('index=' + categoryDataIndex + ' 的类目，名称为 NULL');return;
         }
 
         this.currentCategoryIndex = categoryDataIndex;
-        this.currentCategoryName = category['name'];
+        this.currentCategoryObj = category;
         this.isSaved = false;
+        this.currentBookIndex = 0;
+
+        this.preBookBtnDom.click(function () {
+            app.editor.preBook();
+        });
+        this.inserterDom.submit(function () {
+            app.editor.nxtBook();
+        });
+
+        this.bindKey();
+        this.refreshInserter();
 
         app.main.hide();
         this.wrapDom.show();
+    },
+    refreshInserter: function () {
+        this.bookNumbringDom.text(this.currentCategoryObj['name'] + ' ' + (this.currentBookIndex + 1));
+        this.clearInputs();
+        this.inputDoms.name.focus();
+    },
+    clearInputs: function () {
+        this.inputDoms.name.val('');
+        this.inputDoms.press.val('');
+        this.inputDoms.remarks.val('');
+    },
+    preBook: function () {
+        if (this.currentBookIndex <= 0) {
+            app.notify.info('没有上一本书了...');
+            return;
+        }
 
-        // Inserter
-        // TODO: INPUTS
+        this.saveCurrentBook();
+        this.currentBookIndex--;
+        this.refreshInserter();
+    },
+    nxtBook: function () {
+        if (this.currentBookIndex >= 29) {
+            app.notify.info('没有下一本书了...');
+            return;
+        }
+
+        this.saveCurrentBook();
+        this.currentBookIndex++;
+        this.refreshInserter();
+    },
+    saveCurrentBook: function () {
+
+    },
+    bindKey: function () {
+        $(document).bind('keydown.app_editor', function(e) {
+            switch(e.which) {
+                case 37: // left
+                    if (app.editor.isInputsFocused()) return;
+                    alert('1');
+                    break;
+
+                case 39: // right
+                    if (app.editor.isInputsFocused()) return;
+                    alert('2');
+                    break;
+
+                default: return; // exit this handler for other keys
+            }
+            e.preventDefault(); // prevent the default action (scroll / move caret)
+        });
+    },
+    unbindKey: function () {
+        $(document).unbind('keydown.app_editor');
+    },
+    isInputsFocused: function () {
+        var isFocused = this.inputDoms.name.is(':focus'),
+            isFocused2 = this.inputDoms.press.is(':focus'),
+            isFocused3 = this.inputDoms.remarks.is(':focus');
+
+        return isFocused || isFocused2 || isFocused3;
     },
     localDataLocalStorage: function () {
         window.localStorage ? localStorage.setItem(this.localStorageKey, JSON.stringify(this.localData)) : null;
     },
     exit: function () {
         this.wrapDom.hide();
+        app.main.show();
+
+        this.currentCategoryIndex = null;
+        this.currentCategoryObj = null;
+        this.isSaved = false;
+        this.currentBookIndex = 0;
+
+        this.clearInputs();
+        this.unbindKey();
+        this.preBookBtnDom.unbind('click');
+        this.inserterDom.unbind('submit');
     }
 };
 

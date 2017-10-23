@@ -338,6 +338,10 @@ app.main.createCategoryDialog = function () {
 app.editor = {
     currentCategoryIndex: null,
     currentCategoryObj: null,
+    currentCategoryBooks: null,
+    getCurrentCategoryName: function () {
+        return !!this.currentCategoryObj ? this.currentCategoryObj['name'] || '' : '';
+    },
     isSaved: false,
     currentBookIndex: 0,
     localData: [],
@@ -351,7 +355,7 @@ app.editor = {
         press: $(),
         remarks: $()
     },
-    bookNumbringDom: $(),
+    currentBookInfoDom: $(),
     preBookBtnDom: $(),
     nxtBookBtnDom: $(),
     bookListDom: $(),
@@ -368,7 +372,7 @@ app.editor = {
         this.inputDoms.name = this.inserterDom.find('[name="name"]');
         this.inputDoms.press = this.inserterDom.find('[name="press"]');
         this.inputDoms.remarks = this.inserterDom.find('[name="remarks"]');
-        this.bookNumbringDom = this.inserterDom.find('.current-numbring');
+        this.currentBookInfoDom = this.inserterDom.find('.current-book-info');
         this.preBookBtnDom = this.inserterDom.find('.pre-book-btn');
         this.nxtBookBtnDom = this.inserterDom.find('.nxt-book-btn');
 
@@ -387,6 +391,7 @@ app.editor = {
 
         this.currentCategoryIndex = categoryDataIndex;
         this.currentCategoryObj = category;
+        this.currentCategoryBooks = category['books'];
         this.isSaved = false;
         this.currentBookIndex = 0;
 
@@ -399,12 +404,16 @@ app.editor = {
 
         this.bindKey();
         this.refreshInserter();
+        this.refreshBookList();
 
         app.main.hide();
         this.wrapDom.show();
     },
     refreshInserter: function () {
-        this.bookNumbringDom.text(this.currentCategoryObj['name'] + ' ' + (this.currentBookIndex + 1));
+        this.currentBookInfoDom.find('.category-name')
+            .text(this.getCurrentCategoryName());
+        this.currentBookInfoDom.find('.numbering')
+            .val((this.currentBookIndex + 1));
         this.clearInputs();
         this.inputDoms.name.focus();
     },
@@ -432,6 +441,31 @@ app.editor = {
         this.saveCurrentBook();
         this.currentBookIndex++;
         this.refreshInserter();
+    },
+    refreshBookList: function () {
+        var dom = this.bookListContentDom;
+        dom.html('');
+
+        for (var i = this.currentCategoryBooks.length - 1; i >= 0; i--) {
+            this.bookListItemRender(i, this.currentCategoryBooks[i]).appendTo(dom);
+        }
+    },
+    bookListItemRender: function (index, item) {
+        var numbering = app.editor.getCurrentCategoryName() + ' ' + item['numbering'],
+            bookName = item['name'],
+            bookPress = item['press'],
+            bookRemarks = item['remarks'];
+
+        var itemDom = $(
+            '<div class="list-item">' +
+            '<span class="numbering">' + numbering + '</span>' +
+            '<span class="book-name">' + bookName + '</span>' +
+            '<span class="book-press">' + bookPress + '</span>' +
+            '<span class="book-remarks">' + bookRemarks + '</span>' +
+            '</div>'
+        );
+
+        return itemDom;
     },
     saveCurrentBook: function () {
 

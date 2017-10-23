@@ -25,7 +25,7 @@
     </div>
     
     <!-- Main -->
-    <div class="main-wrap" style="display: none">
+    <div class="main-wrap anim-fade-in" style="display: none">
         <div class="main">
             
             <div class="main-head">
@@ -49,11 +49,14 @@
     </div>
     
     <!-- Editor -->
-    <div class="editor-wrap" style="display: none">
+    <div class="editor-wrap anim-fade-in" style="display: none">
         <div class="editor">
             <form class="editor-inserter" onsubmit="return false;">
                 <div class="numbering-controller left-part">
-                    <span class="current-numbring">?</span>
+                    <span class="current-book-info">
+                        <span class="category-name">?</span>
+                        <input type="text" class="numbering" autocomplete="off" spellcheck="false" />
+                    </span>
                     <button type="button" class="pre-book-btn"></button>
                 </div>
                 <div class="fields-inputs">

@@ -318,6 +318,7 @@ a {
 }
 
 .category-list .list-head .list-actions > span {
+    user-select: none;
     cursor: pointer;
     transition: color 0.15s ease-in-out;
 }
@@ -389,11 +390,11 @@ a {
 .category-list .list-content .item.is-mine:before {
     content: '';
     position: absolute;
-    width: 3px;
-    height: calc(100% - 6px - 1px);
-    top: 3px;
+    width: 2px;
+    height: calc(100% - 10px - 1px);
+    top: 5px;
     left: 0px;
-    background: #2196f3;
+    background: #8acbff;
 }
 
 .category-list .list-content .item.is-completed .item-head:before {
@@ -655,6 +656,21 @@ a {
     background: #f7f7f7;
 }
 
+.editor .editor-book-list .list-content .list-item.edit-focused {
+    color: #2196f3;
+    box-shadow: 0 1px 2px rgba(0,0,0,.035);
+}
+
+.editor .editor-book-list .list-content .list-item.edit-focused:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: #2196f3;
+}
+
 .editor .editor-book-list .list-content .list-item > span {
     flex: 1;
     padding: 10px 0;
@@ -674,6 +690,7 @@ a {
 
 .editor .editor-book-list .list-content .list-item > span.numbering {
     cursor: pointer;
+    user-select: none;
 }
 
 .editor .editor-book-list .list-content .list-item > span.numbering:hover {color: #2196f3;}

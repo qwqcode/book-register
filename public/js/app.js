@@ -348,6 +348,9 @@ app.editor = {
     getCurrentCategoryName: function () {
         return !!this.currentCategoryObj ? this.currentCategoryObj['name'] || '' : '';
     },
+    getMaxNumbering: function () {
+        return !!this.currentCategoryBooks ? this.currentCategoryBooks.length : '';
+    },
     isSaved: false,
     currentBookIndex: 0,
     localData: {},
@@ -410,11 +413,75 @@ app.editor = {
         });
 
         this.bindKey();
-        this.refreshInserter();
         this.refreshBookList();
+        this.initInserter();
 
         app.main.hide();
         this.wrapDom.show();
+    },
+    initInserter: function () {
+        if (this.getMaxNumbering() <= 0) // 如果一本书都没有
+            this.addNewBook();
+
+        // 跳转编辑最后一本书
+        app.editor.redirectBook(this.getMaxNumbering() - 1);
+
+        // Quickly Redirect Book Functions
+        var beforeVal = null;
+        this.currentBookInfoDom.find('.numbering').focus(function () {
+            beforeVal = $(this).val();
+        }).blur(function () {
+            var val = $(this).val();
+            if (!isNaN(val) && Number(val) >= 1) {
+                app.editor.redirectBook(Number(val) - 1);
+            } else {
+                if (beforeVal !== null)
+                    $(this).val(beforeVal);
+            }
+            beforeVal = null;
+        });
+    },
+    refreshInserter: function () {
+        var bookIndex = this.currentBookIndex;
+        var bookNumbering = bookIndex + 1;
+        this.currentBookInfoDom.find('.category-name')
+            .text(this.getCurrentCategoryName());
+        this.currentBookInfoDom.find('.numbering')
+            .val((bookNumbering));
+        this.clearInputs();
+        var book = this.currentCategoryBooks[bookIndex];
+        if (!!book) {
+            var nameVal = !!book.name ? book.name : '',
+                pressVal = !!book.press ? book.press : '',
+                remarksVal = !!book.remarks ? book.remarks : '';
+            this.setInputsVal(nameVal, pressVal, remarksVal);
+        } else {
+            this.setInputsVal('', '', '');
+        }
+        this.inputDoms.name.focus();
+        // BookListItem Focus
+        this.bookListContentDom.find('.edit-focused').removeClass('edit-focused');
+        var itemDom = this.getBookListItemDom(bookNumbering);
+        itemDom.addClass('edit-focused');
+        // BookList Scroll
+        var scrollTo = bookNumbering < this.getMaxNumbering() ? bookNumbering + 4 : bookNumbering;
+        this.scrollToBookListItem(scrollTo);
+    },
+    preBook: function () {
+        if (this.currentBookIndex <= 0) {
+            app.notify.info('没有上一本书了...');
+            return;
+        }
+
+        this.redirectBook(this.currentBookIndex - 1);
+    },
+    nxtBook: function () {
+        /*if (this.currentBookIndex >= this.getMaxNumbering() - 1) {
+            app.notify.info('没有下一本书了...');
+            return;
+        } // 怎么可能没有？不存在的！！无限！！ */
+
+        this.redirectBook(this.currentBookIndex + 1);
     },
     setInputsVal: function (name, press, remarks) {
         this.inputDoms.name.val(name || '');
@@ -426,42 +493,12 @@ app.editor = {
         this.inputDoms.press.val('');
         this.inputDoms.remarks.val('');
     },
-    preBook: function () {
-        if (this.currentBookIndex <= 0) {
-            app.notify.info('没有上一本书了...');
-            return;
-        }
-
-        this.saveCurrentBook();
-        this.currentBookIndex--;
-        this.refreshInserter();
-    },
-    nxtBook: function () {
-        if (this.currentBookIndex >= this.currentCategoryBooks.length - 1) {
-            app.notify.info('没有下一本书了...');
-            return;
-        }
-
-        this.saveCurrentBook();
-        this.currentBookIndex++;
-        this.refreshInserter();
-    },
-    refreshInserter: function () {
-        this.currentBookInfoDom.find('.category-name')
-            .text(this.getCurrentCategoryName());
-        this.currentBookInfoDom.find('.numbering')
-            .val((this.currentBookIndex + 1));
-        this.clearInputs();
-        var book = this.currentCategoryBooks[this.currentBookIndex];
-        if (!!book) {
-            var nameVal = !!book.name ? book.name : '',
-                pressVal = !!book.press ? book.press : '',
-                remarksVal = !!book.remarks ? book.remarks : '';
-            this.setInputsVal(nameVal, pressVal, remarksVal);
-        } else {
-            this.setInputsVal('', '', '');
-        }
-        this.inputDoms.name.focus();
+    addNewBook: function () {
+        var newBookNumbering = this.getMaxNumbering() + 1;
+        var length = this.currentCategoryBooks.push({numbering: newBookNumbering.toString(), name: '', press: '', remarks: ''});
+        var index = length - 1;
+        var itemDom = this.bookListItemRender(index, this.currentCategoryBooks[index]);
+        itemDom.prependTo(this.bookListContentDom);
     },
     saveCurrentBook: function () {
         var inputName = this.inputDoms.name.val();
@@ -489,22 +526,25 @@ app.editor = {
             if (!this.localData[categoryName])
                 this.localData[categoryName] = {};
             var values = this.localData[categoryName][bookNumbring] || {};
-            if (isNameModified)
-                values.name = inputName;
-            if (isPressModified)
-                values.press = inputPress;
-            if (isRemarksModified)
-                values.remarks = inputRemarks;
+            if (isNameModified) values.name = inputName;
+            if (isPressModified) values.press = inputPress;
+            if (isRemarksModified) values.remarks = inputRemarks;
 
             this.localData[categoryName][bookNumbring] = values;
 
             // TODO: 更新 BookList 中单个 item
+            var itemDom = this.getBookListItemDom(bookNumbring);
+            if (itemDom) {
+                if (isNameModified) itemDom.find('.book-name').text(values.name);
+                if (isPressModified) itemDom.find('.book-press').text(values.press);
+                if (isRemarksModified) itemDom.find('.book-remarks').text(values.remarks);
+            }
 
             // 保存到浏览器
             this.localDataLocalStorage();
         }
 
-        console.log(this.localData);
+        // console.log(this.localData);
     },
     bindKey: function () {
         $(document).bind('keydown.app_editor', function(e) {
@@ -534,6 +574,27 @@ app.editor = {
 
         return isFocused || isFocused2 || isFocused3;
     },
+    redirectBook: function (bookIndex) {
+        if (isNaN(bookIndex))
+            return;
+
+        // 在跳转之前 保存当前图书
+        this.saveCurrentBook();
+
+        bookIndex = Number(bookIndex);
+        var bookNumbering = bookIndex + 1;
+
+        if (bookNumbering > this.getMaxNumbering()) {
+            // 补充数据
+            for (var newBookNumbering = this.getMaxNumbering() + 1; newBookNumbering <= bookNumbering; newBookNumbering++) {
+                // console.log(newBookNumbering);
+                this.addNewBook();
+            }
+        }
+
+        this.currentBookIndex = bookIndex;
+        this.refreshInserter();
+    },
     refreshBookList: function () {
         var dom = this.bookListContentDom;
         dom.html('');
@@ -541,23 +602,47 @@ app.editor = {
         for (var i = this.currentCategoryBooks.length - 1; i >= 0; i--) {
             this.bookListItemRender(i, this.currentCategoryBooks[i]).appendTo(dom);
         }
+
+        dom.unbind('click.editor_book_list');
+        dom.bind('click.editor_book_list', function (e) {
+            var dom = $(e.target);
+            if (dom.is('.numbering') && !!dom.closest('.list-item').length) {
+                var numbering = Number(dom.closest('.list-item').attr('data-numbering'));
+                app.editor.redirectBook(numbering - 1);
+            }
+        });
     },
     bookListItemRender: function (index, item) {
-        var numbering = app.editor.getCurrentCategoryName() + ' ' + item['numbering'],
+        var numbering = item['numbering'],
+            numberingFull = app.editor.getCurrentCategoryName() + ' ' + numbering,
             bookName = item['name'],
             bookPress = item['press'],
             bookRemarks = item['remarks'];
 
         var itemDom = $(
-            '<div class="list-item">' +
-            '<span class="numbering">' + numbering + '</span>' +
-            '<span class="book-name">' + bookName + '</span>' +
-            '<span class="book-press">' + bookPress + '</span>' +
-            '<span class="book-remarks">' + bookRemarks + '</span>' +
+            '<div class="list-item" data-numbering="' + numbering + '">' +
+            '<span class="numbering"></span>' +
+            '<span class="book-name"></span>' +
+            '<span class="book-press"></span>' +
+            '<span class="book-remarks"></span>' +
             '</div>'
         );
 
+        itemDom.find('.numbering').text(numberingFull);
+        itemDom.find('.book-name').text(bookName);
+        itemDom.find('.book-press').text(bookPress);
+        itemDom.find('.book-remarks').text(bookRemarks);
+
         return itemDom;
+    },
+    getBookListItemDom: function (numbering) {
+        return this.bookListContentDom.find('[data-numbering=' + numbering + ']');
+    },
+    scrollToBookListItem: function (numbering) {
+        var itemDom = this.getBookListItemDom(numbering <= this.getMaxNumbering() ? numbering : this.getMaxNumbering());
+        var scrollTop = (itemDom.offset().top - app.editor.bookListContentDom.offset().top);
+        this.bookListDom.stop(true).animate({scrollTop: scrollTop}, 200);
+        // this.bookListDom.stop(true).scrollTop(scrollTop);
     },
     localDataLocalStorage: function () {
         window.localStorage ? localStorage.setItem(this.localStorageKey, JSON.stringify(this.localData)) : null;

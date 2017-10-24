@@ -158,21 +158,34 @@ class Api extends ApiBase
             return $this->error($response, '图书 JSON 解析失败 ' . json_last_error_msg());
     
         // 导入单个类目图书数据
-        $importCategoryBookItem = function ($categoryName, array $bookItem) use ($user, $time) {
-                if (empty($bookItem['numbering']) || (empty($bookItem['name']) && empty($bookItem['press']) && empty($bookItem['remarks'])))
-                    throw new \Exception('内容残缺');
-                
-                $this->tableBook()->updateOrInsert([
-                    'category_name' => $categoryName,
-                    'numbering'     => $bookItem['numbering'],
-                ], [
-                    'name'       => $bookItem['name'],
-                    'press'      => $bookItem['press'],
-                    'remarks'    => $bookItem['remarks'],
-                    'user'       => $user,
-                    'created_at' => $time,
-                    'updated_at' => $time,
-                ]);
+        $importCategoryBookItem = function ($categoryName, $numbering, array $bookItem) use ($user, $time) {
+            // $numbering 永不等于 "0"！
+            if (empty($numbering) || (empty($bookItem['name']) && empty($bookItem['press']) && empty($bookItem['remarks'])))
+                throw new \Exception('内容残缺');
+    
+            $attributes = [
+                'category_name' => $categoryName,
+                'numbering'     => $numbering,
+            ];
+            
+            $values = [
+                'user'       => $user,
+                'updated_at' => $time,
+            ];
+            
+            if (!empty($bookItem['name']))
+                $values = array_merge($values, ['name' => $bookItem['name']]);
+    
+            if (!empty($bookItem['press']))
+                $values = array_merge($values, ['press' => $bookItem['press']]);
+    
+            if (!empty($bookItem['remarks']))
+                $values = array_merge($values, ['remarks' => $bookItem['remarks']]);
+            
+            if (!$this->tableBook()->where($attributes)->exists())
+                $values = array_merge($values, ['created_at' => $time]);
+            
+            $this->tableBook()->updateOrInsert($attributes, $values);
             
             return true;
         };
@@ -191,8 +204,9 @@ class Api extends ApiBase
                 if (!$category->exists())
                     throw new \Exception('类目' . $categoryName . ' 未找到');
     
-                foreach ($books as $bookItem) {
-                    $importCategoryBookItem($categoryName, $bookItem);
+                foreach ($books as $numbring => $bookItem) {
+                    // Key 即是 Numbring
+                    $importCategoryBookItem($categoryName, $numbring, $bookItem);
                     
                     $bookTotal++;
                 }

@@ -104,6 +104,7 @@ app.main = {
 
         this.dom.addClass('large-size');
         this.updateHead();
+        this.categoryList.update();
     },
 
     toggleLogin: function () {
@@ -115,13 +116,15 @@ app.main = {
         // Update User Info
         this.headDom.find('.user-name-text').text(app.data.getUser());
 
-        var headBookTotalText = app.main.headDom.find('.book-total-text');
-        headBookTotalText.text('加载中...');
-        app.api.getUser(app.data.getUser(), function (data) {
-            headBookTotalText.text(data['book_total'] + ' 本书');
-        }, function () {
-            headBookTotalText.text('获取失败...');
-        });
+        if (!!app.data.getUser()) {
+            var headBookTotalText = app.main.headDom.find('.book-total-text');
+            headBookTotalText.text('加载中...');
+            app.api.getUser(app.data.getUser(), function (data) {
+                headBookTotalText.text(data['book_total'] + ' 本书');
+            }, function () {
+                headBookTotalText.text('获取失败...');
+            });
+        }
     },
 
     show: function () {
@@ -230,6 +233,9 @@ app.main.categoryListInit = function (appendingDom) {
                 obj.onItemClick($(this).attr('data-category-index'));
             });
             itemDom.appendTo(contentDom);
+
+            // 滚动归零
+            contentDom.scrollTop(0);
         };
 
         // 我负责的
@@ -344,7 +350,7 @@ app.editor = {
     },
     isSaved: false,
     currentBookIndex: 0,
-    localData: [],
+    localData: {},
     localStorageKey: 'editor_local_data',
 
     dom: $(),
@@ -363,7 +369,7 @@ app.editor = {
 
     register: function () {
         if (window.localStorage)
-            this.localData = JSON.parse(localStorage.getItem(this.localStorageKey) || '[]');
+            this.localData = JSON.parse(localStorage.getItem(this.localStorageKey) || '{}');
 
         this.dom = $('.editor');
         this.wrapDom = $('.editor-wrap');
@@ -393,7 +399,8 @@ app.editor = {
         this.currentCategoryObj = category;
         this.currentCategoryBooks = category['books'];
         this.isSaved = false;
-        this.currentBookIndex = 0;
+        var bookCount = this.currentCategoryBooks.length;
+        this.currentBookIndex = (bookCount > 0) ? bookCount - 1 : 0;
 
         this.preBookBtnDom.click(function () {
             app.editor.preBook();
@@ -409,13 +416,10 @@ app.editor = {
         app.main.hide();
         this.wrapDom.show();
     },
-    refreshInserter: function () {
-        this.currentBookInfoDom.find('.category-name')
-            .text(this.getCurrentCategoryName());
-        this.currentBookInfoDom.find('.numbering')
-            .val((this.currentBookIndex + 1));
-        this.clearInputs();
-        this.inputDoms.name.focus();
+    setInputsVal: function (name, press, remarks) {
+        this.inputDoms.name.val(name || '');
+        this.inputDoms.press.val(press || '');
+        this.inputDoms.remarks.val(remarks || '');
     },
     clearInputs: function () {
         this.inputDoms.name.val('');
@@ -433,7 +437,7 @@ app.editor = {
         this.refreshInserter();
     },
     nxtBook: function () {
-        if (this.currentBookIndex >= 29) {
+        if (this.currentBookIndex >= this.currentCategoryBooks.length - 1) {
             app.notify.info('没有下一本书了...');
             return;
         }
@@ -442,33 +446,65 @@ app.editor = {
         this.currentBookIndex++;
         this.refreshInserter();
     },
-    refreshBookList: function () {
-        var dom = this.bookListContentDom;
-        dom.html('');
-
-        for (var i = this.currentCategoryBooks.length - 1; i >= 0; i--) {
-            this.bookListItemRender(i, this.currentCategoryBooks[i]).appendTo(dom);
+    refreshInserter: function () {
+        this.currentBookInfoDom.find('.category-name')
+            .text(this.getCurrentCategoryName());
+        this.currentBookInfoDom.find('.numbering')
+            .val((this.currentBookIndex + 1));
+        this.clearInputs();
+        var book = this.currentCategoryBooks[this.currentBookIndex];
+        if (!!book) {
+            var nameVal = !!book.name ? book.name : '',
+                pressVal = !!book.press ? book.press : '',
+                remarksVal = !!book.remarks ? book.remarks : '';
+            this.setInputsVal(nameVal, pressVal, remarksVal);
+        } else {
+            this.setInputsVal('', '', '');
         }
-    },
-    bookListItemRender: function (index, item) {
-        var numbering = app.editor.getCurrentCategoryName() + ' ' + item['numbering'],
-            bookName = item['name'],
-            bookPress = item['press'],
-            bookRemarks = item['remarks'];
-
-        var itemDom = $(
-            '<div class="list-item">' +
-            '<span class="numbering">' + numbering + '</span>' +
-            '<span class="book-name">' + bookName + '</span>' +
-            '<span class="book-press">' + bookPress + '</span>' +
-            '<span class="book-remarks">' + bookRemarks + '</span>' +
-            '</div>'
-        );
-
-        return itemDom;
+        this.inputDoms.name.focus();
     },
     saveCurrentBook: function () {
+        var inputName = this.inputDoms.name.val();
+        var inputPress = this.inputDoms.press.val();
+        var inputRemarks = this.inputDoms.remarks.val();
 
+        var categoryName = this.getCurrentCategoryName();
+        var rawBookData = this.currentCategoryBooks[this.currentBookIndex];
+        if (!rawBookData) {
+            app.notify.error('当前图书 index=' + this.currentBookIndex + ' 原始数据不存在，无法保存');
+            return;
+        }
+
+        var bookNumbring = rawBookData.numbering;
+        var isNameModified = (inputName.length > 0 && inputName !== rawBookData['name']);
+        var isPressModified = (inputPress.length > 0 && inputPress !== rawBookData['press']);
+        var isRemarksModified = (inputRemarks.length > 0 && inputRemarks !== rawBookData['remarks']);
+        if ((isNameModified || isPressModified || isRemarksModified)) {
+            // 修改源数据
+            rawBookData.name = inputName;
+            rawBookData.press = inputPress;
+            rawBookData.remarks = inputRemarks;
+
+            // 存储修改记录
+            if (!this.localData[categoryName])
+                this.localData[categoryName] = {};
+            var values = this.localData[categoryName][bookNumbring] || {};
+            if (isNameModified)
+                values.name = inputName;
+            if (isPressModified)
+                values.press = inputPress;
+            if (isRemarksModified)
+                values.remarks = inputRemarks;
+
+            this.localData[categoryName][bookNumbring] = values;
+
+            // TODO: 更新 BookList 中单个 item
+
+            // 保存到浏览器
+            this.localDataLocalStorage();
+        }
+
+        console.log(this.localData);
     },
     bindKey: function () {
         $(document).bind('keydown.app_editor', function(e) {
@@ -497,6 +533,31 @@ app.editor = {
             isFocused3 = this.inputDoms.remarks.is(':focus');
 
         return isFocused || isFocused2 || isFocused3;
+    },
+    refreshBookList: function () {
+        var dom = this.bookListContentDom;
+        dom.html('');
+
+        for (var i = this.currentCategoryBooks.length - 1; i >= 0; i--) {
+            this.bookListItemRender(i, this.currentCategoryBooks[i]).appendTo(dom);
+        }
+    },
+    bookListItemRender: function (index, item) {
+        var numbering = app.editor.getCurrentCategoryName() + ' ' + item['numbering'],
+            bookName = item['name'],
+            bookPress = item['press'],
+            bookRemarks = item['remarks'];
+
+        var itemDom = $(
+            '<div class="list-item">' +
+            '<span class="numbering">' + numbering + '</span>' +
+            '<span class="book-name">' + bookName + '</span>' +
+            '<span class="book-press">' + bookPress + '</span>' +
+            '<span class="book-remarks">' + bookRemarks + '</span>' +
+            '</div>'
+        );
+
+        return itemDom;
     },
     localDataLocalStorage: function () {
         window.localStorage ? localStorage.setItem(this.localStorageKey, JSON.stringify(this.localData)) : null;

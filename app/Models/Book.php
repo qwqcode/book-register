@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Book extends Model
 {
-    protected $table = 'book_2';
+    protected $table = 'book';
     
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';

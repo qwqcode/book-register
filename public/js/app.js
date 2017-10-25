@@ -451,7 +451,6 @@ app.editor = {
 
         this.refreshBookList();
         this.initInserter();
-        this.bindKey();
 
         app.main.hide();
         this.wrapDom.show();
@@ -494,6 +493,11 @@ app.editor = {
             }
             beforeVal = null;
         });
+
+        // 自动填充
+        this.enableInputAutoComplete(this.inputDoms.name);
+        this.enableInputAutoComplete(this.inputDoms.press);
+        this.enableInputAutoComplete(this.inputDoms.remarks);
     },
     uninitInserter: function () {
         this.clearInputs();
@@ -554,6 +558,115 @@ app.editor = {
         this.inputDoms.name.val('');
         this.inputDoms.press.val('');
         this.inputDoms.remarks.val('');
+    },
+    enableInputAutoComplete: function (inputDom) {
+        var parentDom = this.inserterDom;
+
+        var inputKey = inputDom.attr('name');
+        var books = app.editor.currentCategoryBooks;
+
+        var remove = function () {
+            parentDom.find('.input-auto-complete-panel').remove();
+            inputDom.unbind('keydown.editor_input_auto_complete');
+        };
+        var searchVal = function () {
+            remove();
+
+            var val = $.trim(inputDom.val());
+            if (val.length <= 0) return;
+
+            var group = [];
+            for (var i in books) {
+                var itemVal = $.trim(books[i][inputKey]);
+                if (itemVal.indexOf(val) > -1 && group.indexOf(itemVal) <= -1) {
+                    group.push(itemVal);
+                }
+            }
+
+            if (group.length <= 0 || (group.length === 1 && group[0] === val))
+                return;
+
+            var panelDom = $('<div class="input-auto-complete-panel">' +
+                '<div class="panel-options"></div>' +
+                '</div>');
+
+            var inputPos = $.getPosition(inputDom);
+            panelDom.css('left', inputPos['left'] + 'px')
+                .css('top', inputPos['bottom'] + 'px')
+                .css('width', inputPos['width'] + 'px');
+
+            var optionsDom = panelDom.find('.panel-options');
+            for (var indexGroup in group) {
+                var optionText = group[indexGroup];
+                $('<div class="panel-option-item" data-key="' + indexGroup + '"></div>')
+                    .data('content', optionText)
+                    .html(optionText.replace(val, function(matched) {
+                        return '<span class="highlight">' + appUtils.htmlEncode(matched) + '</span>'
+                    }))
+                    .click(function () {
+                        inputDom.val($(this).data('content'));
+                        remove();
+                    })
+                    .appendTo(optionsDom);
+            }
+
+            panelDom.appendTo(parentDom);
+
+            // 键盘控制
+            var currentFocusedIndex = -1;
+            var clearFocused = function () {
+                optionsDom.find('.focused').removeClass('focused');
+            };
+            var setFocused = function () {
+                clearFocused();
+                var optionDom = optionsDom.find('[data-key="' + currentFocusedIndex + '"]');
+                optionDom.addClass('focused');
+                if (!!optionDom.offset())
+                    panelDom.scrollTop(optionDom.offset().top - optionsDom.offset().top);
+            };
+            inputDom.bind('keydown.editor_input_auto_complete', function(e) {
+                switch(e.which) {
+                    case 13: // enter
+                        if (currentFocusedIndex <= -1)
+                            return; // allow raw enter
+
+                        optionsDom.find('.focused').click();
+                        break;
+                    case 38: // up
+                        if (currentFocusedIndex <= -1)
+                            break;
+
+                        currentFocusedIndex--;
+                        setFocused();
+                        break;
+                    case 40: // down
+                        if (currentFocusedIndex >= group.length - 1)
+                            break;
+
+                        currentFocusedIndex++;
+                        setFocused();
+                        break;
+
+                    default: return;
+                }
+                e.preventDefault();
+            });
+        };
+        inputDom.bind('input propertychange', function () {
+            setTimeout(function () {
+                searchVal();
+            }, 100);
+        });
+        inputDom.focus(function () {
+            setTimeout(function () {
+                searchVal();
+            }, 100);
+        });
+        inputDom.blur(function () {
+            setTimeout(function () {
+                remove();
+            }, 100);
+        });
     },
     addNewBooksFilling: function (lastNumbering) {
         // 补充数据
@@ -616,27 +729,6 @@ app.editor = {
         }
 
         // console.log(this.localData);
-    },
-    bindKey: function () {
-        $(document).bind('keydown.app_editor', function(e) {
-            switch(e.which) {
-                case 37: // left
-                    if (app.editor.isInputsFocused()) return;
-                    alert('1');
-                    break;
-
-                case 39: // right
-                    if (app.editor.isInputsFocused()) return;
-                    alert('2');
-                    break;
-
-                default: return; // exit this handler for other keys
-            }
-            e.preventDefault(); // prevent the default action (scroll / move caret)
-        });
-    },
-    unbindKey: function () {
-        $(document).unbind('keydown.app_editor');
     },
     isInputsFocused: function () {
         var isFocused = this.inputDoms.name.is(':focus'),
@@ -755,7 +847,6 @@ app.editor = {
         this.currentBookIndex = 0;
 
         this.uninitInserter();
-        this.unbindKey();
     }
 };
 
@@ -1118,3 +1209,40 @@ var appUtils = {
         return div.innerText || div.textContent;
     }
 };
+
+$.extend({
+    getPosition: function ($element) {
+        var el = $element[0];
+        var isBody = el.tagName === 'BODY';
+
+        var elRect = el.getBoundingClientRect();
+        if (elRect.width === null) {
+            // width and height are missing in IE8, so compute them manually; see https://github.com/twbs/bootstrap/issues/14093
+            elRect = $.extend({}, elRect, {width: elRect.right - elRect.left, height: elRect.bottom - elRect.top})
+        }
+        var isSvg = window.SVGElement && el instanceof window.SVGElement;
+        // Avoid using $.offset() on SVGs since it gives incorrect results in jQuery 3.
+        // See https://github.com/twbs/bootstrap/issues/20280
+        var elOffset = isBody ? {top: 0, left: 0} : (isSvg ? null : $element.offset());
+        var scroll = {scroll: isBody ? document.documentElement.scrollTop || document.body.scrollTop : $element.scrollTop()};
+        var outerDims = isBody ? {width: $(window).width(), height: $(window).height()} : null;
+
+        return $.extend({}, elRect, scroll, outerDims, elOffset);
+    },
+    sprintf: function (str) {
+        var args = arguments,
+            flag = true,
+            i = 1;
+
+        str = str.replace(/%s/g, function () {
+            var arg = args[i++];
+
+            if (typeof arg === 'undefined') {
+                flag = false;
+                return '';
+            }
+            return arg;
+        });
+        return flag ? str : '';
+    }
+});

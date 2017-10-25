@@ -152,6 +152,10 @@ app.main = {
 
     hide: function () {
         this.wrap.hide();
+    },
+
+    uploadBooks: function () {
+        app.api.uploadCategory();
     }
 };
 
@@ -169,8 +173,9 @@ app.main.categoryListInit = function (appendingDom) {
         '<input type="text" class="form-control" placeholder="搜索类目..." autocomplete="off" spellcheck="false">' +
         '</span>' +
         '<span class="list-actions">' +
-        '<span data-toggle="refresh-data"><i class="zmdi zmdi-refresh"></i> 刷新</span>' +
-        '<span><a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 导出数据</a></span>' +
+        '<span data-toggle="refresh-data"><i class="zmdi zmdi-refresh"></i> 刷新列表</span>' +
+        '<span data-toggle="upload-books"><i class="zmdi zmdi-cloud-upload"></i> 上传数据</span>' +
+        '<span><a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 数据导出</a></span>' +
         '<span data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建类目</span>' +
         '</span>' +
         '</span>' +
@@ -192,6 +197,11 @@ app.main.categoryListInit = function (appendingDom) {
     // Refresh Data Btn
     dom.find('[data-toggle="refresh-data"]').click(function () {
         app.main.categoryList.updateFromServer();
+    });
+
+    // Upload Books
+    dom.find('[data-toggle="upload-books"]').click(function () {
+        app.main.uploadBooks();
     });
 
     // Category Search
@@ -362,13 +372,14 @@ app.main.createCategoryDialog = function () {
 
 /* Editor */
 app.editor = {
+    isWorkStarted: false,
     currentCategoryIndex: null,
     currentCategoryObj: null,
     currentCategoryBooks: null,
     getCurrentCategoryName: function () {
         return !!this.currentCategoryObj ? this.currentCategoryObj['name'] || '' : '';
     },
-    getMaxNumbering: function () {
+    getLastNumbering: function () {
         return !!this.currentCategoryBooks ? this.currentCategoryBooks.length : '';
     },
     isSaved: false,
@@ -396,6 +407,8 @@ app.editor = {
         if (window.localStorage)
             this.localData = JSON.parse(localStorage.getItem(this.localStorageKey) || '{}');
 
+        this.isWorkStarted = false;
+
         this.dom = $('.editor');
         this.wrapDom = $('.editor-wrap');
 
@@ -422,6 +435,8 @@ app.editor = {
             app.notify.error('index=' + categoryDataIndex + ' 的类目，名称为 NULL');return;
         }
 
+        this.isWorkStarted = true;
+
         this.currentCategoryIndex = categoryDataIndex;
         this.currentCategoryObj = category;
         this.currentCategoryBooks = category['books'];
@@ -431,7 +446,7 @@ app.editor = {
 
         // 同步本地的修改
         if (!!app.editor.localData[categoryName]) {
-            app.editor.syncLocalModified(); // TODO;
+            app.editor.syncLocalModified();
         }
 
         this.refreshBookList();
@@ -447,15 +462,15 @@ app.editor = {
             app.editor.exit();
         });
         this.toolBarDom.find('[data-toggle="upload"]').click(function () {
-
+            app.main.uploadBooks();
         });
     },
     initInserter: function () {
-        if (this.getMaxNumbering() <= 0) // 如果一本书都没有
+        if (this.getLastNumbering() <= 0) // 如果一本书都没有
             this.addNewBook();
 
         // 跳转编辑最后一本书
-        app.editor.redirectBook(this.getMaxNumbering() - 1);
+        app.editor.redirectBook(this.getLastNumbering() - 1);
 
         // 图书焦点控制按钮
         this.preBookBtnDom.click(function () {
@@ -511,7 +526,7 @@ app.editor = {
         var itemDom = this.getBookListItemDom(bookNumbering);
         itemDom.addClass('edit-focused');
         // BookList Scroll
-        var scrollTo = bookNumbering < this.getMaxNumbering() ? bookNumbering + 4 : bookNumbering;
+        var scrollTo = bookNumbering < this.getLastNumbering() ? bookNumbering + 4 : bookNumbering;
         this.scrollToBookListItem(scrollTo);
     },
     preBook: function () {
@@ -523,7 +538,7 @@ app.editor = {
         this.redirectBook(this.currentBookIndex - 1);
     },
     nxtBook: function () {
-        /*if (this.currentBookIndex >= this.getMaxNumbering() - 1) {
+        /*if (this.currentBookIndex >= this.getLastNumbering() - 1) {
             app.notify.info('没有下一本书了...');
             return;
         } // 怎么可能没有？不存在的！！无限！！ */
@@ -540,8 +555,17 @@ app.editor = {
         this.inputDoms.press.val('');
         this.inputDoms.remarks.val('');
     },
+    addNewBooksFilling: function (lastNumbering) {
+        // 补充数据
+        if (lastNumbering <= this.getLastNumbering())
+            return;
+
+        for (var newBookNumbering = this.getLastNumbering() + 1; newBookNumbering <= lastNumbering; newBookNumbering++) {
+            this.addNewBook();
+        }
+    },
     addNewBook: function () {
-        var newBookNumbering = this.getMaxNumbering() + 1;
+        var newBookNumbering = this.getLastNumbering() + 1;
         var length = this.currentCategoryBooks.push({numbering: newBookNumbering.toString(), name: '', press: '', remarks: ''});
         var index = length - 1;
         var itemDom = this.bookListItemRender(index, this.currentCategoryBooks[index]);
@@ -631,13 +655,8 @@ app.editor = {
         bookIndex = Number(bookIndex);
         var bookNumbering = bookIndex + 1;
 
-        if (bookNumbering > this.getMaxNumbering()) {
-            // 补充数据
-            for (var newBookNumbering = this.getMaxNumbering() + 1; newBookNumbering <= bookNumbering; newBookNumbering++) {
-                // console.log(newBookNumbering);
-                this.addNewBook();
-            }
-        }
+        // 补充数据
+        this.addNewBooksFilling(bookNumbering);
 
         this.currentBookIndex = bookIndex;
         this.refreshInserter();
@@ -686,36 +705,35 @@ app.editor = {
         return this.bookListContentDom.find('[data-numbering=' + numbering + ']');
     },
     scrollToBookListItem: function (numbering) {
-        var itemDom = this.getBookListItemDom(numbering <= this.getMaxNumbering() ? numbering : this.getMaxNumbering());
+        var itemDom = this.getBookListItemDom(numbering <= this.getLastNumbering() ? numbering : this.getLastNumbering());
         var scrollTop = (itemDom.offset().top - app.editor.bookListContentDom.offset().top);
         this.bookListDom.stop(true).animate({scrollTop: scrollTop}, 200);
         // this.bookListDom.stop(true).scrollTop(scrollTop);
     },
     syncLocalModified: function () {
-        for (var categoryName in this.localData) {
-            if (categoryName !== this.getCurrentCategoryName())
-                continue;
+        var categoryName = this.getCurrentCategoryName();
+        var bookModifieds = app.editor.localData[categoryName];
+        if (!bookModifieds)
+            return;
 
-            var bookModifieds = app.editor.localData[categoryName];
-            var maxNumbering = (function () {
-                var max = 0;
-                for (var numbering in bookModifieds) {
-                    if (numbering > max) max = numbering;
-                }
-                return max;
-            })();
-            if (maxNumbering <= 0)
-                continue;
-            if (maxNumbering > this.getMaxNumbering()) {
-                // 补充数据
-                for (var newBookNumbering = this.getMaxNumbering() + 1; newBookNumbering <= maxNumbering; newBookNumbering++) {
-                    this.addNewBook();
-                }
-            }
+        var lastNumbering = (function () {
+            var max = 0;
             for (var numbering in bookModifieds) {
-                for (var key in bookModifieds[numbering]) {
-                    this.currentCategoryBooks[numbering - 1][key] = bookModifieds[numbering][key];
-                }
+                numbering = Number(numbering);
+                if (numbering > max) max = numbering;
+            }
+            return max;
+        })();
+
+        if (lastNumbering <= 0)
+            return;
+
+        // 补充数据
+        this.addNewBooksFilling(lastNumbering);
+
+        for (var numbering in bookModifieds) {
+            for (var key in bookModifieds[numbering]) {
+                this.currentCategoryBooks[numbering - 1][key] = bookModifieds[numbering][key];
             }
         }
     },
@@ -727,6 +745,8 @@ app.editor = {
 
         this.wrapDom.hide();
         app.main.show();
+
+        this.isWorkStarted = false;
 
         this.currentCategoryIndex = null;
         this.currentCategoryObj = null;
@@ -886,249 +906,38 @@ app.api = {
         });
     },
 
-    uploadData: function (categoryName, categoryBooksArr, onSuccess, onError) {
-        onSuccess = onSuccess || function () {
-        };
-        onError = onError || function () {
-        };
+    uploadCategory: function () {
+        if (app.editor.isWorkStarted) {
+            // 保存当前编辑
+            app.editor.saveCurrentBook();
+        }
 
-        var data = {};
-        data[categoryName] = categoryBooksArr;
-        var json = JSON.stringify(data);
+        if (!app.editor.localData || $.isEmptyObject(app.editor.localData)) {
+            app.notify.info('没有修改数据，无需上传');
+            return;
+        }
+
+        app.pageLoader.show('数据上传中... 请勿关闭浏览器！');
+
+        var json = JSON.stringify(app.editor.localData);
+
         $.ajax({
-            url: '/uploadCategoryBooks', method: 'POST', data: {
+            url: '/uploadCategory', method: 'POST', data: {
                 'user': app.data.getUser(),
-                'booksInCategoriesJson': json
-            }, beforeSend: function () {
-
+                'books': json
             }, success: function (data) {
-                if (!!data['success']) {
-                    app.notify.success(data['msg']);
-                    onSuccess();
-                } else {
-                    app.notify.error(data['msg']);
-                    app.notify.error('严重：服务器程序错误，数据无法保存，面临丢失的风险');
-                    onError();
+                app.pageLoader.hide();
+                var resp = app.api.responseHandle(data);
+                if (resp.checkMakeNotify()) {
+                    // 数据修改 清空
+                    app.editor.localData = {};
+                    app.editor.localDataLocalStorage();
                 }
             }, error: function () {
-                app.notify.error('严重：网络错误，数据无法保存，面临丢失的风险');
-                onError();
+                app.pageLoader.hide();
+                app.notify.error('网络错误，图书数据无法上传');
             }
         });
-    }
-};
-
-/* Work */
-app.work = {
-    hot: null,
-    dom: $(),
-    workTableDom: $(),
-    register: function () {
-        this.dom = $('#workArea');
-        this.workTableDom = $('#workTable');
-    },
-    show: function () {
-        if (this.dom.css('display') !== 'none') {
-            return;
-        }
-
-        app.helloScreen.hide();
-        this.dom.show();
-    },
-    newTable: function (tableBooksData) {
-        if (this.hot !== null) {
-            this.hot.destroy();
-        }
-
-        var hotDom = this.workTableDom.html('<div id="handsontable"></div>')
-            .find('#handsontable');
-        this.hot = new Handsontable(hotDom[0], {
-            rowHeaders: true,
-            colHeaders: ['类目', '索引号', '书名', '出版社', '备注'],
-            colWidths: [5, 10, 30, 20, 30],
-            columns: [
-                {data: 'category', readOnly: true},
-                {data: 'numbering', readOnly: true},
-                {data: 'name'},
-                {data: 'press'},
-                {data: 'remarks'}
-            ],
-
-            filters: true,
-            //dropdownMenu: true,
-            //minSpareRows: 500,
-            manualColumnResize: true,
-            manualRowResize: true,
-            stretchH: 'all',
-            contextMenu: {
-                callback: function (key, options) {
-                    if (key === 'aboutCut' || key === 'aboutCopy' || key === 'aboutPaste') {
-                        setTimeout(function () {
-                            app.dialog.build('换一个方式操作？！', '您可以使用键盘快捷键进行操作：<br>' +
-                                '复制 Ctrl + C<br>粘贴 Ctrl + V<br>剪切 Ctrl + X<br>撤销 Ctrl + Z<br>重做 Ctrl + Y')
-                        }, 100);
-                    }
-
-                    if (key === 'saveData') {
-                        app.work.saveCurrent();
-                    }
-                },
-                items: {
-                    'aboutCut'  : {name: '剪切 (Ctrl+X)'},
-                    'aboutCopy' : {name: '复制 (Ctrl+C)'},
-                    'aboutPaste': {name: '粘贴 (Ctrl+V)'},
-                    "hsep1": "---------",
-                    'undo' : {name: '撤销 (Ctrl+Z)'},
-                    'redo' : {name: '重做 (Ctrl+Y)'},
-                    "hsep2": "---------",
-                    'saveData' : {name: '保存数据'}
-                }
-            },
-            // Enter envent
-            enterMoves: function () {
-                return {
-                    row: 1,
-                    col: -app.work.hot.getSelected()[1] + 2
-                }
-            }
-        });
-
-        // Spare rows adding
-        Handsontable.hooks.add('afterSetDataAtCell', function (changes, source) {
-            // 数据未保存的
-            app.work.isSaved = false;
-            // 当编辑了最后一行
-            if (changes[0][0] + 1 >= app.work.hot.getData().length) {
-                // 创建新行
-                var categoryName = app.data.currentCategoryName;
-                var dataLastNumbering = app.work.hot.getData().length + 1;
-                var data = app.work.hot.getSourceData();
-                // 创建新 500 行
-                for (var i = 1; i <= 500; i++) {
-                    var numbering = dataLastNumbering + i;
-                    data.push({
-                        category: categoryName,
-                        numbering: numbering,
-                        name: '',
-                        press: '',
-                        remarks: ''
-                    });
-                }
-                app.work.hot.render();
-            }
-        });
-
-        var tableScreenFit = function () {
-            app.work.hot.updateSettings({
-                height: app.work.dom.innerHeight()
-            });
-        };
-        tableScreenFit();
-        $(window).resize(function () {
-            tableScreenFit();
-        });
-
-        // 装入图书
-        app.work.hot.loadData(tableBooksData);
-
-        // 离开页面提示
-        $(window).on('beforeunload', function(eventObject) {
-            if (!app.work.isSaved) {
-                var returnValue = "数据保存了吗？真的要离开吗？";
-                return eventObject.returnValue = returnValue;
-            }
-        })
-    },
-
-    /* Data Handle */
-
-    handleBooksTableUse: function (categoryName, booksData) {
-        if (!booksData || typeof(booksData) !== 'object') {
-            return [];
-        }
-
-        var total = booksData.length + 500; // 预留 500 个空行
-        var data = [];
-        for (var i = 0; i < total; i++) {
-            var numbering = String(i + 1);
-            data[i] = {
-                category: categoryName,
-                numbering: numbering,
-                name: '',
-                press: '',
-                remarks: ''
-            };
-
-            // 搜寻是否有当前 numbering 的图书数据
-            for (var bookItemIndex in booksData) {
-                var bookItem = booksData[bookItemIndex];
-                if (String(bookItem['numbering']) === numbering) {
-                    data[i]['name'] = String(bookItem['name'] || '');
-                    data[i]['press'] = String(bookItem['press'] || '');
-                    data[i]['remarks'] = String(bookItem['remarks'] || '');
-                    break;
-                }
-            }
-        }
-
-        return data;
-    },
-
-    handleTableDataUploadUse: function (tableData) {
-        if (!tableData || typeof(tableData) !== 'object') {
-            return [];
-        }
-
-        var data = [];
-
-        var maxNumbering = 1;
-        for (var i in tableData) {
-            var item = tableData[i];
-            var numbering = Number(item['numbering']);
-            if (numbering > maxNumbering
-                && ($.trim(item['name']).length > 0 || $.trim(item['press']).length > 0 || $.trim(item['remarks']).length > 0))
-                maxNumbering = numbering;
-        }
-
-        for (var i = 0; i <= maxNumbering - 1; i++) {
-            var bookItem = tableData[i];
-            data[i] = {
-                numbering: bookItem['numbering'],
-                name: bookItem['name'],
-                press: bookItem['press'],
-                remarks: bookItem['remarks']
-            };
-        }
-        return data;
-    },
-
-    isSaved: true,
-    saveCurrent: function () {
-        if (this.hot === null) {
-            app.notify.warning('Handsontable 还未实例化');
-            return;
-        }
-
-        app.work.hot.deselectCell();
-        var tableData = app.work.hot.getSourceData();
-        var updateData = app.work.handleTableDataUploadUse(tableData);
-        app.pageLoader.show('数据保存中，请勿退出浏览器！');
-        app.api.uploadData(app.data.currentCategoryName, updateData, function () {
-            // 更新类目列表
-            if (app.category.currentSelector !== null)
-                app.category.currentSelector.updateFromServer();
-            app.work.isSaved = true;
-            app.pageLoader.hide();
-        }, function () {
-            app.work.isSaved = false;
-            app.pageLoader.hide();
-        });
-    },
-
-    exitWork: function() {
-        app.dialog.build('退出', '数据保存了吗？是否真的要退出？', ['退出', function () {
-            window.location.reload();
-        }], ['放弃', function () {}]);
     }
 };
 

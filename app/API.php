@@ -159,9 +159,11 @@ class Api extends ApiBase
     
         // 导入单个类目图书数据
         $importCategoryBookItem = function ($categoryName, $numbering, array $bookItem) use ($user, $time) {
+            $numbering = intval($numbering);
+            
             // $numbering 永不等于 "0"！
             if (empty($numbering) || (empty($bookItem['name']) && empty($bookItem['press']) && empty($bookItem['remarks'])))
-                throw new \Exception('内容残缺');
+                throw new \Exception('内容残缺 Numbering=' . $numbering);
     
             $attributes = [
                 'category_name' => $categoryName,
@@ -203,15 +205,17 @@ class Api extends ApiBase
     
                 if (!$category->exists())
                     throw new \Exception('类目' . $categoryName . ' 未找到');
-    
-                foreach ($books as $numbring => $bookItem) {
+                
+                foreach ($arr as $numbring => $bookItem) {
                     // Key 即是 Numbring
                     $importCategoryBookItem($categoryName, $numbring, $bookItem);
                     
                     $bookTotal++;
                 }
-        
-                $category->updateTimestamps();
+                
+                $category->update([
+                    'updated_at' => $time
+                ]);
             } catch (\Exception $exception) {
                 $error = $categoryName . '类 图书数据导入错误： ' . $exception->getMessage();
                 $this->logger->error($error);

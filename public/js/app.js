@@ -10,6 +10,8 @@ $(document).ready(function () {
     app.notify.setShowEnabled(true);
 
     app.pageLoader.hide();
+
+    appHelp.init();
 });
 
 var app = {};
@@ -481,17 +483,26 @@ app.editor = {
 
         // 快速跳转功能
         var beforeVal = null;
-        this.currentBookInfoDom.find('.numbering').focus(function () {
-            beforeVal = $(this).val();
-        }).blur(function () {
-            var val = $(this).val();
+        var bookRedirectInputDom = this.currentBookInfoDom.find('.numbering');
+        var bookRedirectBlur = function () {
+            var val = bookRedirectInputDom.val();
             if (!isNaN(val) && Number(val) >= 1) {
                 app.editor.redirectBook(Number(val) - 1);
             } else {
                 if (beforeVal !== null)
-                    $(this).val(beforeVal);
+                    bookRedirectInputDom.val(beforeVal);
             }
             beforeVal = null;
+        };
+        bookRedirectInputDom.focus(function () {
+            beforeVal = bookRedirectInputDom.val();
+        }).blur(function () {
+            bookRedirectBlur();
+        }).bind('keydown.editor_redirect_book', function(e) {
+            if (e.which === 13) {
+                bookRedirectBlur();
+                e.preventDefault();
+            }
         });
 
         // 自动填充

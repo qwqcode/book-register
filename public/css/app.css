@@ -614,7 +614,16 @@ a {
     border: 0;
     display: inline-block;
     width: 50px;
+    height: 35px;
     overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 1px;
+    transition: all .3s ease;
+}
+
+.editor .editor-inserter .current-book-info .numbering:focus {
+    outline: none;
+    border-bottom-color: #2196F3;
 }
 
 .editor .editor-inserter .pre-book-btn,
@@ -1053,4 +1062,70 @@ a {
     80%,90% {
         stroke: #ffc107
     }
+}
+
+/* help-layer */
+.help-layer-wrap {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.25);
+    transition: background 0.15s ease-in-out;
+}
+
+.help-layer {
+    display: block;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+.help-layer-actions {
+    position: absolute;
+    right: 30px;
+    top: 20px;
+}
+
+.help-layer-actions > span {
+    display: inline-block;
+    font-size: 3.4rem;
+    color: #FFF;
+    cursor: pointer;
+    transition: .3s all;
+}
+
+.help-layer-actions > span:not(:last-child) {
+    padding-right: 15px;
+}
+
+.help-layer-actions > span > i {
+    padding: 0 10px;
+}
+
+.help-layer-actions > span:hover {
+    opacity: .7;
+}
+
+.help-layer-note {
+    position: absolute;
+    background: #ffffffe0;
+    padding: 12px 20px;
+    width: 240px;
+    margin-left: -7px;
+    margin-top: 5px;
+}
+
+.help-layer-note:after {
+    position: absolute;
+    right: 100%;
+    border: solid transparent;
+    border-bottom-color: #ffffff;
+    content: '';
+    width: 0;
+    height: 0;
+    top: -18px;
+    left: 9px;
+    border-width: 9px;
 }

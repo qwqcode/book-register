@@ -6,7 +6,7 @@ var appHelp = {
         appHelp.editor.register();
     },
     newHelpLayer: function() {
-        $('body > help-layer-wrap').remove();
+        $('body > .help-layer-wrap').remove();
         var wrapDom = $('<div class="help-layer-wrap anim-fade-in"></div>').appendTo('body');
         var helpLayerDom = $('<div class="help-layer"></div>').appendTo(wrapDom);
         var actionsDom = $(
@@ -51,9 +51,9 @@ appHelp.editor = {
     },
     show: function () {
         var layer = appHelp.newHelpLayer();
-        layer.addNote(app.editor.currentBookInfoDom.find('.numbering'), '点击这里，输入 编号，按回车键，跳到 指定图书。<br/><br/>假如：你要登记 Z321，但列表里没有，不用多次按 “下一本书” 按钮，直接在这里输入 321 按回车即可');
-        layer.addNote(app.editor.inputDoms.press, '键盘快捷键<br/><br/>按 Tab 输入下一个字段；<br/>按 Enter 跳到 下一本书');
-        layer.addNote(app.editor.bookListContentDom, '点击 索引号 来编辑 指定图书');
-        layer.addNote(app.editor.nxtBookBtnDom, '“下一本书” 按钮<br/><br/>点这里 跳到 下一本书');
+        layer.addNote(app.editor.currentBookInfoDom.find('.numbering'), '快速跳转 到指定图书<br/><br/>点击并输入 编号，按回车键，跳到 指定图书。<br/><br/>栗子：登记 Z321，但列表里没有，在这里输入 321 回车即可。无需多次点下一本书按钮');
+        layer.addNote(app.editor.inputDoms.press, '键盘快捷键<br/><br/>Tab 填下一个框<br/>Enter 下一本书<br/>Ctrl + G 快速跳转');
+        layer.addNote(app.editor.bookListContentDom, '点击 索引号 编辑指定图书');
+        layer.addNote(app.editor.nxtBookBtnDom, '下一本书 按钮<br/><br/>点击这里，登记下一本书');
     }
 };

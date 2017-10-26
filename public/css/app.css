@@ -1133,7 +1133,7 @@ a {
     position: absolute;
     background: #ffffffd6;
     padding: 12px 20px;
-    width: 240px;
+    max-width: 240px;
     margin-left: -7px;
     margin-top: 5px;
     border-radius: 3px;

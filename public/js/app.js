@@ -403,6 +403,7 @@ app.editor = {
         remarks: $()
     },
     currentBookInfoDom: $(),
+    bookRedirectInputDom: $(),
     preBookBtnDom: $(),
     nxtBookBtnDom: $(),
     bookListDom: $(),
@@ -455,6 +456,7 @@ app.editor = {
 
         this.refreshBookList();
         this.initInserter();
+        this.bindKey();
 
         app.main.hide();
         this.wrapDom.show();
@@ -485,7 +487,8 @@ app.editor = {
 
         // 快速跳转功能
         var beforeVal = null;
-        var bookRedirectInputDom = this.currentBookInfoDom.find('.numbering');
+        this.bookRedirectInputDom = this.currentBookInfoDom.find('.numbering');
+        var bookRedirectInputDom = this.bookRedirectInputDom;
         var bookRedirectBlur = function () {
             var val = bookRedirectInputDom.val();
             if (!isNaN(val) && Number(val) >= 1) {
@@ -498,6 +501,7 @@ app.editor = {
         };
         bookRedirectInputDom.focus(function () {
             beforeVal = bookRedirectInputDom.val();
+            bookRedirectInputDom.select();
         }).blur(function () {
             bookRedirectBlur();
         }).bind('keydown.editor_redirect_book', function(e) {
@@ -519,6 +523,7 @@ app.editor = {
         this.currentBookInfoDom.find('.numbering')
             .unbind('onfocus')
             .unbind('onblur');
+        this.bookRedirectInputDom = $();
     },
     refreshInserter: function () {
         var bookIndex = this.currentBookIndex;
@@ -753,6 +758,18 @@ app.editor = {
 
         return isFocused || isFocused2 || isFocused3;
     },
+    bindKey: function() {
+        $(document).bind('keydown.editor_keys', function(e) {
+            if (e.ctrlKey && e.keyCode === 71) {
+                // Ctrl + G
+                app.editor.bookRedirectInputDom.focus();
+                e.preventDefault();
+            }
+        });
+    },
+    unbindKey: function() {
+        $(document).unbind('keydown.editor_keys');
+    },
     redirectBook: function (bookIndex) {
         if (isNaN(bookIndex))
             return;
@@ -852,6 +869,9 @@ app.editor = {
         this.wrapDom.hide();
         app.main.show();
 
+        this.uninitInserter();
+        this.unbindKey();
+
         this.isWorkStarted = false;
 
         this.currentCategoryIndex = null;
@@ -859,8 +879,6 @@ app.editor = {
         this.currentCategoryBooks = null;
         this.isSaved = false;
         this.currentBookIndex = 0;
-
-        this.uninitInserter();
     }
 };
 

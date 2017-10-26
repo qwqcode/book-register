@@ -394,14 +394,12 @@ a {
 }
 
 .category-list .list-content .item.is-mine:before {
-    content: '';
+    content: '\f27d';
+    font-family: 'Material-Design-Iconic-Font';
     position: absolute;
-    width: 10px;
-    border-radius: 0 100px 0 0;
-    height: 10px;
-    bottom: 0;
-    left: 0;
-    background: #2196f3;
+    top: 5px;
+    left: 8px;
+    color: #ffc721;
 }
 
 .category-list .list-content .item.is-mine .item-head .category-name {

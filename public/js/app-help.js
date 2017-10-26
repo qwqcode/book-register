@@ -51,7 +51,7 @@ appHelp.editor = {
     },
     show: function () {
         var layer = appHelp.newHelpLayer();
-        layer.addNote(app.editor.currentBookInfoDom.find('.numbering'), '点击这里，输入 编号，按回车键，跳到 指定图书。<br/><br/>假如：你要登记 Z321，但列表里没有，不用多次按 “下一本书” 按钮，直接在这里输入 321');
+        layer.addNote(app.editor.currentBookInfoDom.find('.numbering'), '点击这里，输入 编号，按回车键，跳到 指定图书。<br/><br/>假如：你要登记 Z321，但列表里没有，不用多次按 “下一本书” 按钮，直接在这里输入 321 按回车即可');
         layer.addNote(app.editor.inputDoms.press, '键盘快捷键<br/><br/>按 Tab 输入下一个字段；<br/>按 Enter 跳到 下一本书');
         layer.addNote(app.editor.bookListContentDom, '点击 索引号 来编辑 指定图书');
         layer.addNote(app.editor.nxtBookBtnDom, '“下一本书” 按钮<br/><br/>点这里 跳到 下一本书');

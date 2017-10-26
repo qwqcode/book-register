@@ -386,7 +386,12 @@ app.editor = {
     },
     isSaved: false,
     currentBookIndex: 0,
-    localData: {},
+    getLocalData: function () {
+        return JSON.parse(localStorage.getItem(this.localStorageKey) || '{}');
+    },
+    setLocalData: function (obj) {
+        window.localStorage ? localStorage.setItem(this.localStorageKey, JSON.stringify(obj)) : null;
+    },
     localStorageKey: 'editor_local_data',
 
     dom: $(),
@@ -406,9 +411,6 @@ app.editor = {
     toolBarDom: $(),
 
     register: function () {
-        if (window.localStorage)
-            this.localData = JSON.parse(localStorage.getItem(this.localStorageKey) || '{}');
-
         this.isWorkStarted = false;
 
         this.dom = $('.editor');
@@ -447,7 +449,7 @@ app.editor = {
         this.currentBookIndex = (bookCount > 0) ? bookCount - 1 : 0;
 
         // 同步本地的修改
-        if (!!app.editor.localData[categoryName]) {
+        if (!!this.getLocalData()[categoryName]) {
             app.editor.syncLocalModified();
         }
 
@@ -606,6 +608,10 @@ app.editor = {
                 .css('top', inputPos['bottom'] + 'px')
                 .css('width', inputPos['width'] + 'px');
 
+            panelDom.on('mousedown', function(event) {
+                event.preventDefault();
+            });
+
             var optionsDom = panelDom.find('.panel-options');
             for (var indexGroup in group) {
                 var optionText = group[indexGroup];
@@ -666,17 +672,15 @@ app.editor = {
         inputDom.bind('input propertychange', function () {
             setTimeout(function () {
                 searchVal();
-            }, 100);
+            }, 20);
         });
         inputDom.focus(function () {
             setTimeout(function () {
                 searchVal();
-            }, 100);
+            }, 20);
         });
         inputDom.blur(function () {
-            setTimeout(function () {
-                remove();
-            }, 100);
+            remove();
         });
     },
     addNewBooksFilling: function (lastNumbering) {
@@ -696,9 +700,9 @@ app.editor = {
         itemDom.prependTo(this.bookListContentDom);
     },
     saveCurrentBook: function () {
-        var inputName = this.inputDoms.name.val();
-        var inputPress = this.inputDoms.press.val();
-        var inputRemarks = this.inputDoms.remarks.val();
+        var inputName = $.trim(this.inputDoms.name.val());
+        var inputPress = $.trim(this.inputDoms.press.val());
+        var inputRemarks = $.trim(this.inputDoms.remarks.val());
 
         var categoryName = this.getCurrentCategoryName();
         var rawBookData = this.currentCategoryBooks[this.currentBookIndex];
@@ -718,14 +722,15 @@ app.editor = {
             rawBookData.remarks = inputRemarks;
 
             // 存储修改记录
-            if (!this.localData[categoryName])
-                this.localData[categoryName] = {};
-            var values = this.localData[categoryName][bookNumbring] || {};
+            var localData = this.getLocalData();
+            if (!localData[categoryName])
+                localData[categoryName] = {};
+            var values = localData[categoryName][bookNumbring] || {};
             if (isNameModified) values.name = inputName;
             if (isPressModified) values.press = inputPress;
             if (isRemarksModified) values.remarks = inputRemarks;
 
-            this.localData[categoryName][bookNumbring] = values;
+            localData[categoryName][bookNumbring] = values;
 
             // 更新 BookList 中单个 item
             var itemDom = this.getBookListItemDom(bookNumbring);
@@ -736,10 +741,10 @@ app.editor = {
             }
 
             // 保存到浏览器
-            this.localDataLocalStorage();
+            this.setLocalData(localData);
         }
 
-        // console.log(this.localData);
+        // console.log(this.getLocalData());
     },
     isInputsFocused: function () {
         var isFocused = this.inputDoms.name.is(':focus'),
@@ -810,12 +815,13 @@ app.editor = {
     scrollToBookListItem: function (numbering) {
         var itemDom = this.getBookListItemDom(numbering <= this.getLastNumbering() ? numbering : this.getLastNumbering());
         var scrollTop = (itemDom.offset().top - app.editor.bookListContentDom.offset().top);
-        this.bookListDom.stop(true).animate({scrollTop: scrollTop}, 200);
+        this.bookListDom.stop(true).animate({scrollTop: scrollTop}, 150);
         // this.bookListDom.stop(true).scrollTop(scrollTop);
     },
     syncLocalModified: function () {
         var categoryName = this.getCurrentCategoryName();
-        var bookModifieds = app.editor.localData[categoryName];
+        var localData = this.getLocalData();
+        var bookModifieds = localData[categoryName];
         if (!bookModifieds)
             return;
 
@@ -839,9 +845,6 @@ app.editor = {
                 this.currentCategoryBooks[numbering - 1][key] = bookModifieds[numbering][key];
             }
         }
-    },
-    localDataLocalStorage: function () {
-        window.localStorage ? localStorage.setItem(this.localStorageKey, JSON.stringify(this.localData)) : null;
     },
     exit: function () {
         this.saveCurrentBook(); // 保存当前修改图书
@@ -1014,14 +1017,15 @@ app.api = {
             app.editor.saveCurrentBook();
         }
 
-        if (!app.editor.localData || $.isEmptyObject(app.editor.localData)) {
+        var localData = app.editor.getLocalData();
+        if (!localData || $.isEmptyObject(localData)) {
             app.notify.info('没有修改数据，无需上传');
             return;
         }
 
         app.pageLoader.show('数据上传中... 请勿关闭浏览器！');
 
-        var json = JSON.stringify(app.editor.localData);
+        var json = JSON.stringify(localData);
 
         $.ajax({
             url: '/uploadCategory', method: 'POST', data: {
@@ -1032,8 +1036,7 @@ app.api = {
                 var resp = app.api.responseHandle(data);
                 if (resp.checkMakeNotify()) {
                     // 数据修改 清空
-                    app.editor.localData = {};
-                    app.editor.localDataLocalStorage();
+                    app.editor.setLocalData({});
                 }
             }, error: function () {
                 app.pageLoader.hide();

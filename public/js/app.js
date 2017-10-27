@@ -21,7 +21,7 @@ app.pageLoader = {
     show: function (text) {
         text = text || '加载中...';
         var dom = $(this.sel);
-        dom.find('.loading-text').text(text);
+        dom.find('.loading-text').html(text);
         dom.fadeIn(300);
     },
     hide: function () {
@@ -257,7 +257,7 @@ app.main.categoryListInit = function (appendingDom) {
                 '<div class="item-desc">' +
                 '<span title="登记员"><i class="zmdi zmdi-account"></i> ' + appUtils.htmlEncode(item['user'] || "未知") + '</span>' +
                 '<span title="更新时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['updated_at']) + '</span>' +
-                '<span title="创建时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['created_at']) + '</span>' +
+                '<!--<span title="创建时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['created_at']) + '</span>-->' +
                 '</div>' +
                 '</div>' +
                 '</div>'
@@ -840,7 +840,7 @@ app.editor = {
     },
     updateBooksFromServer: function() {
         var index = this.currentCategoryIndex;
-        app.pageLoader.show('正在更新该类目图书...');
+        app.pageLoader.show('正在更新图书数据');
         app.api.getCategoryBooks(index, function () {
             app.pageLoader.hide();
             app.editor.exit();
@@ -1057,7 +1057,7 @@ app.api = {
             return;
         }
 
-        app.pageLoader.show('数据上传中... 请勿关闭浏览器！');
+        app.pageLoader.show('正在上传数据<br/>请勿关闭浏览器');
 
         var json = JSON.stringify(localData);
 

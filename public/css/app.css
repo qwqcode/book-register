@@ -362,8 +362,11 @@ a {
     background: #FFF;
     padding: 15px 25px;
     border-bottom: 1px solid #F4F4F4;
+    border-right: 1px solid #F4F4F4;
     cursor: pointer;
     transition: background 0.15s ease-in-out;
+    max-height: 100px;
+    overflow: hidden;
 }
 
 .category-list .list-content .item:hover {
@@ -371,8 +374,8 @@ a {
 }
 
 .category-list .list-content .item .item-head {
-    font-size: 18px;
-    font-weight: bold;
+    font-size: 24px;
+    text-align: center;
 }
 
 .category-list .list-content .item .item-head .category-name {
@@ -380,7 +383,7 @@ a {
 }
 
 .category-list .list-content .item .item-desc {
-    margin-top: 10px;
+    margin-top: 15px;
 }
 
 .category-list .list-content .item .item-desc > span {
@@ -390,7 +393,7 @@ a {
 .category-list .list-content .item .item-desc > span > i {
     color: #2196f3;
     font-style: normal;
-    margin-right: 2px;
+    margin-right: 5px;
 }
 
 .category-list .list-content .item.is-mine:before {

@@ -245,9 +245,10 @@ app.main.categoryListInit = function (appendingDom) {
         contentDom.html('');
         var itemRender = function (index, item) {
             var itemDom = $(
-                '<div class="item' + (item.isMine() ? ' is-mine' : '') + '' +
+                '<div class="item col-sm-6 col-md-3' + (item.isMine() ? ' is-mine' : '') + '' +
                 (String(item['remarks']).indexOf('已完成') >= 0 ? ' is-completed' : '') +
                 '" data-category-index="' + index + '">' +
+                '<div class="item-inner">' +
                 '<div class="item-head">' +
                 '<span class="category-name">' +
                 appUtils.htmlEncode(item['name'] || "未命名") +
@@ -257,6 +258,7 @@ app.main.categoryListInit = function (appendingDom) {
                 '<span title="登记员"><i class="zmdi zmdi-account"></i> ' + appUtils.htmlEncode(item['user'] || "未知") + '</span>' +
                 '<span title="更新时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['updated_at']) + '</span>' +
                 '<span title="创建时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['created_at']) + '</span>' +
+                '</div>' +
                 '</div>' +
                 '</div>'
             );

@@ -450,9 +450,7 @@ app.editor = {
         this.currentBookIndex = (bookCount > 0) ? bookCount - 1 : 0;
 
         // 同步本地的修改
-        if (!!this.getLocalData()[categoryName]) {
-            app.editor.syncLocalModified();
-        }
+        app.editor.syncLocalModified();
 
         this.refreshBookList();
         this.initInserter();
@@ -465,6 +463,9 @@ app.editor = {
         this.toolBarDom = $('.editor-tool-bar');
         this.toolBarDom.find('[data-toggle="exit"]').click(function () {
             app.editor.exit();
+        });
+        this.toolBarDom.find('[data-toggle="updateBooks"]').click(function () {
+            app.editor.updateBooksFromServer();
         });
         this.toolBarDom.find('[data-toggle="upload"]').click(function () {
             app.main.uploadBooks();
@@ -834,6 +835,19 @@ app.editor = {
         var scrollTop = (itemDom.offset().top - app.editor.bookListContentDom.offset().top);
         this.bookListDom.stop(true).animate({scrollTop: scrollTop}, 150);
         // this.bookListDom.stop(true).scrollTop(scrollTop);
+    },
+    updateBooksFromServer: function() {
+        var index = this.currentCategoryIndex;
+        app.pageLoader.show('正在更新该类目图书...');
+        app.api.getCategoryBooks(index, function () {
+            app.pageLoader.hide();
+            app.editor.exit();
+            app.editor.startWork(index);
+            app.notify.success('已更新');
+        }, function () {
+            app.pageLoader.hide();
+            app.notify.error('更新失败');
+        });
     },
     syncLocalModified: function () {
         var categoryName = this.getCurrentCategoryName();

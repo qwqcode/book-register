@@ -1088,7 +1088,7 @@ a {
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.12);
     transition: background 0.15s ease-in-out;
 }
 
@@ -1129,7 +1129,7 @@ a {
 .help-layer-note {
     z-index: 998;
     position: absolute;
-    background: rgba(255, 255, 255, 0.84);
+    background: rgba(255, 255, 255, 0.9);
     padding: 12px 20px;
     max-width: 240px;
     margin-left: -7px;

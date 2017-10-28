@@ -75,12 +75,12 @@ class Api extends ApiBase
         $categories = $this->tableCategory()->where(['user' => $user]);
         if ($categories->exists()) {
             $categoryTotal = $categories->count();
-            
-            // Find books
-            $books = $this->tableBook()->where(['user' => $user])->where('name', '!=', '');
-            if ($books->exists()) {
-                $bookTotal = $books->count();
-            }
+        }
+    
+        // Find books
+        $books = $this->tableBook()->where(['user' => $user])->where('name', '!=', '');
+        if ($books->exists()) {
+            $bookTotal = $books->count();
         }
         
         return $this->success($response, '获取用户资料成功', [
@@ -99,7 +99,7 @@ class Api extends ApiBase
         $name = trim($request->getParam('name'));
         $withBooks = trim($request->getParam('withBooks'));
     
-        $categoriesTable = $this->tableCategory();
+        $categoriesTable = $this->tableCategory('`name` ASC');
         
         if (!empty($name)) {
             $categories = $categoriesTable->where(['name' => $name]);
@@ -163,7 +163,7 @@ class Api extends ApiBase
             
             // $numbering 永不等于 "0"！
             if (empty($numbering) || (empty($bookItem['name']) && empty($bookItem['press']) && empty($bookItem['remarks'])))
-                throw new \Exception('内容残缺 Numbering=' . $numbering);
+                return;
     
             $attributes = [
                 'category_name' => $categoryName,
@@ -189,7 +189,7 @@ class Api extends ApiBase
             
             $this->tableBook()->updateOrInsert($attributes, $values);
             
-            return true;
+            return;
         };
         
         $categoryTotal = 0;
@@ -254,7 +254,7 @@ class Api extends ApiBase
         ]);
         
         if ($category->exists())
-            return $this->error($response, '同名类目已存在，无需再次创建');
+            return $this->success($response, '同名类目已存在，无需再次创建', ['categoryExist' => true, 'categoryName' => $name]);
         
         // 若类目不存在 则创建一个
         $insert = $this->tableCategory()->insert([
@@ -266,9 +266,9 @@ class Api extends ApiBase
         ]);
         
         if ($insert)
-            return $this->success($response, '类目创建成功');
+            return $this->success($response, '类目创建成功', ['categoryExist' => false, 'categoryName' => $name]);
         
-        return $this->success($response, '类目创建失败');
+        return $this->error($response, '类目创建失败');
     }
     
     /**

@@ -1,6 +1,6 @@
 /* Zneiat/library-register-server */
 $(document).ready(function () {
-    appUtils.checkLocalTime();
+    $.checkLocalTime();
 
     app.data.register();
     app.main.register();
@@ -22,11 +22,11 @@ app.pageLoader = {
         text = text || '加载中...';
         var dom = $(this.sel);
         dom.find('.loading-text').html(text);
-        dom.fadeIn(300);
+        dom.show();
     },
     hide: function () {
         var dom = $(this.sel);
-        dom.fadeOut(300);
+        dom.hide();
     }
 };
 
@@ -52,7 +52,7 @@ app.data = {
     categoryHandle: function (categoryName, handle) {
         for (var i in this.categoris) {
             if (this.categoris[i]['name'] === categoryName) {
-                handle(this.categoris[i]);
+                handle(i, this.categoris[i]);
                 break;
             }
         }
@@ -62,7 +62,7 @@ app.data = {
             for (var i in category['books']) {
                 var book = category['books'][i];
                 if (book['numbering'] === booksNumbering) {
-                    handle(book);
+                    handle(i, book);
                     break;
                 }
             }
@@ -74,7 +74,6 @@ app.data = {
 app.main = {
     dom: $(),
     wrap: $(),
-    headDom: $(),
     loginDom: $(),
     categoryListDom: $(),
     categoryList: null,
@@ -82,21 +81,11 @@ app.main = {
     register: function () {
         this.dom = $('.main');
         this.wrap = $('.main-wrap');
-        this.headDom = $('.main-head');
         this.loginDom = $('.main-login');
         this.categoryListDom = $('.main-category-list-wrap');
 
-        // Header
-        this.headDom.find('.user-name').click(function () {
-            app.dialog.build('改变身份', '确定要改变自己的身份？', ['确定', function () {
-                app.main.toggleLogin();
-                app.data.clearUser();
-            }], ['取消', null]);
-        });
-
         // Category List
         this.categoryListInit(this.categoryListDom);
-        this.categoryList.updateFromServer(); // Update Category Data
 
         // Login Check
         if (!!app.data.getUser())
@@ -124,28 +113,14 @@ app.main = {
             app.data.setUser(userName);
 
         this.dom.addClass('large-size');
-        this.updateHead();
-        this.categoryList.update();
+
+        // Update Category Data
+        this.categoryList.updateFromServer();
     },
 
     toggleLogin: function () {
         this.loginDom.find('#yourName').val(app.data.getUser());
         this.dom.removeClass('large-size');
-    },
-
-    updateHead: function () {
-        // Update User Info
-        this.headDom.find('.user-name-text').text(app.data.getUser());
-
-        if (!!app.data.getUser()) {
-            var headBookTotalText = app.main.headDom.find('.book-total-text');
-            headBookTotalText.text('加载中...');
-            app.api.getUser(app.data.getUser(), function (data) {
-                headBookTotalText.text(data['book_total'] + ' 本书');
-            }, function () {
-                headBookTotalText.text('获取失败...');
-            });
-        }
     },
 
     show: function () {
@@ -169,16 +144,23 @@ app.main.categoryListInit = function (appendingDom) {
         '<div class="category-list">' +
 
         '<div class="list-head">' +
-        '<span class="title">书籍类目列表</span>' +
-        '<span class="part-right">' +
+        '<span class="left-part">' +
+        '<div class="title">書記 Online</div>' +
+        '<div class="user">' +
+        '<a class="username" data-toggle="user-logout">' + $.htmlEncode(app.data.getUser() || '无名英雄') + '</a>' +
+        '<a class="book-count"></a>' +
+        '</div>' +
+        '</span>' +
+
+        '<span class="right-part">' +
         '<span class="list-search">' +
         '<input type="text" class="form-control" placeholder="搜索类目..." autocomplete="off" spellcheck="false">' +
         '</span>' +
         '<span class="list-actions">' +
-        '<span data-toggle="refresh-data"><i class="zmdi zmdi-refresh"></i> 刷新列表</span>' +
-        '<span data-toggle="upload-books"><i class="zmdi zmdi-cloud-upload"></i> 上传数据</span>' +
-        '<span><a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 数据导出</a></span>' +
-        '<span data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建类目</span>' +
+        '<a data-toggle="refresh-data"><i class="zmdi zmdi-refresh"></i> 刷新列表</a>' +
+        '<a data-toggle="upload-books"><i class="zmdi zmdi-cloud-upload"></i> 上传图书</a>' +
+        '<a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 数据导出</a>' +
+        '<a data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建类目</a>' +
         '</span>' +
         '</span>' +
         '</div>' +
@@ -191,29 +173,39 @@ app.main.categoryListInit = function (appendingDom) {
         '</div>'
     );
 
+    var headDom = dom.find('.list-head');
+
+    // User Logout
+    headDom.find('[data-toggle="user-logout"]').click(function () {
+        app.dialog.build('改变身份', '确定要改变自己的身份？', ['确定', function () {
+            app.main.toggleLogin();
+            app.data.clearUser();
+        }], ['取消', null]);
+    });
+
     // Create Category Btn
-    dom.find('[data-toggle="create-category"]').click(function () {
+    headDom.find('[data-toggle="create-category"]').click(function () {
         app.main.createCategoryDialog();
     });
 
     // Refresh Data Btn
-    dom.find('[data-toggle="refresh-data"]').click(function () {
+    headDom.find('[data-toggle="refresh-data"]').click(function () {
         app.main.categoryList.updateFromServer();
     });
 
     // Upload Books
-    dom.find('[data-toggle="upload-books"]').click(function () {
+    headDom.find('[data-toggle="upload-books"]').click(function () {
         app.main.uploadBooks();
     });
 
     // Category Search
-    dom.find('.list-search > input').bind('input propertychange', function() {
+    headDom.find('.list-search > input').bind('input propertychange', function() {
         var value = $.trim($(this).val());
         if (value.length > 0) {
             var categoryData = [];
             for (var i in app.data.categoris) {
                 var item = app.data.categoris[i];
-                if ($.trim(item['name']).toUpperCase().indexOf(value) >= 0) {
+                if ($.trim(item['name']).toUpperCase().indexOf(value.toUpperCase()) >= 0) {
                     categoryData[i] = item;
                 }
             }
@@ -221,22 +213,34 @@ app.main.categoryListInit = function (appendingDom) {
         } else {
             app.main.categoryList.update();
         }
+    }).focus(function () {
+        $(this).select();
     });
 
     obj.getDom = function () {
         return dom;
     };
 
-    obj.updateFromServer = function () {
+    obj.getHead = function () {
+        return headDom;
+    };
+
+    obj.updateFromServer = function (onAfter) {
+        onAfter = onAfter || function () {};
+
         obj.setLoading(true);
+
+        // 更新类目列表
         app.api.getCategory(function () {
             obj.update();
             obj.setLoading(false);
+            onAfter();
         }, function () {
             obj.setLoading(false);
         });
 
-        app.main.updateHead();
+        // 更新用户信息
+        this.updateUserInfoFromServer();
     };
 
     obj.update = function (categoryData) {
@@ -251,24 +255,26 @@ app.main.categoryListInit = function (appendingDom) {
                 '<div class="item-inner">' +
                 '<div class="item-head">' +
                 '<span class="category-name">' +
-                appUtils.htmlEncode(item['name'] || "未命名") +
+                $.htmlEncode(item['name'] || "未命名") +
                 '</span>' +
                 '</div>' +
-                '<div class="item-desc">' +
-                '<span title="登记员"><i class="zmdi zmdi-account"></i> ' + appUtils.htmlEncode(item['user'] || "未知") + '</span>' +
-                '<span title="更新时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['updated_at']) + '</span>' +
-                '<!--<span title="创建时间"><i class="zmdi zmdi-time"></i> ' + appUtils.timeAgo(item['created_at']) + '</span>-->' +
+                '<div class="item-meta">' +
+                '<span class="users"><i class="zmdi zmdi-account"></i> ' + $.htmlEncode(item['user'] || "未知") + '</span>' +
+                '<span><i class="zmdi zmdi-cloud-upload"></i> ' + $.timeAgo(item['updated_at']) + '</span>' +
+                '<span><i class="zmdi zmdi-check"></i> ' + item['books_count'] + '</span>' +
+                '<!--<span><i class="zmdi zmdi-time"></i> ' + $.timeAgo(item['created_at']) + '</span>-->' +
                 '</div>' +
                 '</div>' +
                 '</div>'
             );
-            itemDom.click(function () {
-                obj.onItemClick($(this).attr('data-category-index'));
+            itemDom.find('.item-head').click(function () {
+                obj.onItemClick(index);
             });
+            itemDom.find('.item-meta');
             itemDom.appendTo(contentDom);
 
             // 滚动归零
-            contentDom.scrollTop(0);
+            //contentDom.scrollTop(0);
         };
 
         // 我负责的
@@ -300,23 +306,36 @@ app.main.categoryListInit = function (appendingDom) {
             return;
         }
 
-        var startWork = function () {
-            obj.setLoading(true);
+        this.startWork(categoryDataIndex);
+    };
 
-            app.api.getCategoryBooks(categoryDataIndex, function () {
-                // 当图书数据下载完毕
-                obj.update();
-                obj.setLoading(false);
+    obj.startWork = function (categoryDataIndex) {
+        obj.setLoading(true);
 
-                // 正式开始工作
-                app.editor.startWork(categoryDataIndex);
-            }, function () {
-                obj.setLoading(false);
-                app.notify.error('无法打开该类目');
-            });
-        };
+        app.api.getCategoryBooks(categoryDataIndex, function () {
+            // 当图书数据下载完毕
+            obj.update();
+            obj.setLoading(false);
 
-        startWork();
+            // 正式开始工作
+            app.editor.startWork(categoryDataIndex);
+        }, function () {
+            obj.setLoading(false);
+            app.notify.error('无法打开该类目');
+        });
+    };
+
+    obj.updateUserInfoFromServer = function () {
+        if (!app.data.getUser())
+            return;
+
+        var bookCountDom = headDom.find('.user .book-count');
+        bookCountDom.text('战绩：加载中...');
+        app.api.getUser(app.data.getUser(), function (data) {
+            bookCountDom.text('战绩：' + data['book_total'] + ' 本书');
+        }, function () {
+            bookCountDom.text('战绩：获取失败');
+        });
     };
 
     obj.setLoading = function (isLoading) {
@@ -360,10 +379,28 @@ app.main.createCategoryDialog = function () {
         var input = dom.find('#categoryName');
         var inputVal = $.trim(input.val());
         if (inputVal.length <= 0) { input.focus();return; }
-        app.dialog.build('创建新的类目', '请确认类目名 ' + appUtils.htmlEncode(inputVal) + ' 准确无误', ['立刻创建', function () {
+        inputVal = inputVal.toUpperCase();
+        app.dialog.build('创建新的类目', '请确认类目名 ' + $.htmlEncode(inputVal) + ' 准确无误', ['立刻创建', function () {
             app.main.categoryList.setLoading(true);
-            app.api.categoryCreate(inputVal, function () {
-                app.main.categoryList.updateFromServer();
+            app.api.categoryCreate(inputVal, function (data) {
+                app.main.categoryList.updateFromServer(function () {
+                    var categoryName = data['categoryName'];
+
+                    if (!!data['categoryExist']) {
+                        app.notify.success('类目 ' + categoryName + ' 已存在');
+                    } else {
+                        app.notify.success('类目 ' + categoryName + ' 创建成功');
+                    }
+
+                    app.data.categoryHandle(categoryName, function (index, category) {
+                        // 是否现在打开类目？
+                        app.dialog.build('进入类目', '类目 ' + $.htmlEncode(categoryName) + ' 可以进入了！要现在进入吗？', ['要', function () {
+                            app.main.categoryList.startWork(index);
+                        }], ['不要', null]);
+
+                    });
+
+                });
             }, function () {
                 app.main.categoryList.updateFromServer();
             });
@@ -384,15 +421,26 @@ app.editor = {
         return !!this.currentCategoryObj ? this.currentCategoryObj['name'] || '' : '';
     },
     getLastNumbering: function () {
-        return !!this.currentCategoryBooks ? this.currentCategoryBooks.length : '';
+        return !!this.currentCategoryBooks ? this.currentCategoryBooks.length : 0;
     },
     isSaved: false,
     currentBookIndex: 0,
     getLocalData: function () {
         return JSON.parse(localStorage.getItem(this.localStorageKey) || '{}');
     },
+    clearLocalData: function () {
+        return localStorage.removeItem(this.localStorageKey);
+    },
     setLocalData: function (obj) {
         window.localStorage ? localStorage.setItem(this.localStorageKey, JSON.stringify(obj)) : null;
+    },
+    getLocalDataBookTotal: function () {
+        var localData = this.getLocalData(),
+            localDataCount = 0;
+        for (var i in localData) {
+            localDataCount += !!localData[i] ? $.countObj(localData[i]) : 0;
+        }
+        return localDataCount;
     },
     localStorageKey: 'editor_local_data',
 
@@ -432,7 +480,7 @@ app.editor = {
 
         this.initToolBar();
     },
-    startWork: function (categoryDataIndex) {
+    startWork: function (categoryDataIndex, startBookIndex) {
         var category = app.data.categoris[categoryDataIndex];
         if (!category) {
             app.notify.error('类目是不存在的，index=' + categoryDataIndex);return;
@@ -452,14 +500,23 @@ app.editor = {
         this.currentBookIndex = (bookCount > 0) ? bookCount - 1 : 0;
 
         // 同步本地的修改
-        app.editor.syncLocalModified();
+        this.updateToolBar();
 
+        app.editor.syncLocalModified();
         this.refreshBookList();
         this.initInserter();
         this.bindKey();
 
         app.main.hide();
         this.wrapDom.show();
+
+        // 跳转编辑
+        if (typeof (startBookIndex) === 'number' && startBookIndex >= 0) {
+            app.editor.redirectBook(startBookIndex, false);
+        } else {
+            // 跳转编辑最后一本书
+            app.editor.redirectBook(this.getLastNumbering() - 1, false);
+        }
     },
     initToolBar: function () {
         this.toolBarDom = $('.editor-tool-bar');
@@ -473,12 +530,12 @@ app.editor = {
             app.main.uploadBooks();
         });
     },
+    updateToolBar: function () {
+        this.toolBarDom.find('.local-data-count').text(this.getLocalDataBookTotal());
+    },
     initInserter: function () {
         if (this.getLastNumbering() <= 0) // 如果一本书都没有
             this.addNewBook();
-
-        // 跳转编辑最后一本书
-        app.editor.redirectBook(this.getLastNumbering() - 1);
 
         // 图书焦点控制按钮
         this.preBookBtnDom.click(function () {
@@ -489,21 +546,17 @@ app.editor = {
         });
 
         // 快速跳转功能
-        var beforeVal = null;
         this.bookRedirectInputDom = this.currentBookInfoDom.find('.numbering');
         var bookRedirectInputDom = this.bookRedirectInputDom;
         var bookRedirectBlur = function () {
             var val = bookRedirectInputDom.val();
-            if (!isNaN(val) && Number(val) >= 1) {
-                app.editor.redirectBook(Number(val) - 1);
+            if (!isNaN(val)) {
+                app.editor.redirectBook((Number(val) >= 1) ? (Number(val) - 1) : 0);
             } else {
-                if (beforeVal !== null)
-                    bookRedirectInputDom.val(beforeVal);
+                bookRedirectInputDom.val(app.editor.currentBookIndex + 1);
             }
-            beforeVal = null;
         };
         bookRedirectInputDom.focus(function () {
-            beforeVal = bookRedirectInputDom.val();
             bookRedirectInputDom.select();
         }).blur(function () {
             bookRedirectBlur();
@@ -621,12 +674,12 @@ app.editor = {
             });
 
             var optionsDom = panelDom.find('.panel-options');
-            for (var indexGroup in group) {
+            for (var indexGroup in group.reverse()) {
                 var optionText = group[indexGroup];
                 $('<div class="panel-option-item" data-key="' + indexGroup + '"></div>')
                     .data('content', optionText)
                     .html(optionText.replace(val, function(matched) {
-                        return '<span class="highlight">' + appUtils.htmlEncode(matched) + '</span>'
+                        return '<span class="highlight">' + $.htmlEncode(matched) + '</span>'
                     }))
                     .click(function () {
                         inputDom.val($(this).data('content'));
@@ -703,15 +756,10 @@ app.editor = {
     addNewBook: function () {
         var newBookNumbering = this.getLastNumbering() + 1;
         var length = this.currentCategoryBooks.push({numbering: newBookNumbering.toString(), name: '', press: '', remarks: ''});
-        var index = length - 1;
-        var itemDom = this.bookListItemRender(index, this.currentCategoryBooks[index]);
+        var itemDom = this.bookListItemRender(this.currentCategoryBooks[length - 1]);
         itemDom.prependTo(this.bookListContentDom);
     },
     saveCurrentBook: function () {
-        var inputName = $.trim(this.inputDoms.name.val());
-        var inputPress = $.trim(this.inputDoms.press.val());
-        var inputRemarks = $.trim(this.inputDoms.remarks.val());
-
         var categoryName = this.getCurrentCategoryName();
         var rawBookData = this.currentCategoryBooks[this.currentBookIndex];
         if (!rawBookData) {
@@ -720,39 +768,66 @@ app.editor = {
         }
 
         var bookNumbring = rawBookData.numbering;
-        var isNameModified = (inputName.length > 0 && inputName !== rawBookData['name']);
-        var isPressModified = (inputPress.length > 0 && inputPress !== rawBookData['press']);
-        var isRemarksModified = (inputRemarks.length > 0 && inputRemarks !== rawBookData['remarks']);
-        if ((isNameModified || isPressModified || isRemarksModified)) {
-            // 修改源数据
-            rawBookData.name = inputName;
-            rawBookData.press = inputPress;
-            rawBookData.remarks = inputRemarks;
+        var inputName = $.trim(this.inputDoms.name.val());
+        var inputPress = $.trim(this.inputDoms.press.val());
+        var inputRemarks = $.trim(this.inputDoms.remarks.val());
 
-            // 存储修改记录
-            var localData = this.getLocalData();
-            if (!localData[categoryName])
-                localData[categoryName] = {};
-            var values = localData[categoryName][bookNumbring] || {};
-            if (isNameModified) values.name = inputName;
-            if (isPressModified) values.press = inputPress;
-            if (isRemarksModified) values.remarks = inputRemarks;
+        // 是否已修改
+        var isNameModified = inputName !== rawBookData['name'],
+            isPressModified = inputPress !== rawBookData['press'],
+            isRemarksModified = inputRemarks !== rawBookData['remarks'];
 
-            localData[categoryName][bookNumbring] = values;
+        // 是否输入为空
+        var isNameNull = inputName.length <= 0,
+            isPressNull = inputPress.length <= 0,
+            isRemarksNull = inputRemarks.length <= 0,
+            isAllNull = isNameNull && isPressNull && isRemarksNull;
 
-            // 更新 BookList 中单个 item
-            var itemDom = this.getBookListItemDom(bookNumbring);
-            if (itemDom) {
-                if (isNameModified) itemDom.find('.book-name').text(values.name);
-                if (isPressModified) itemDom.find('.book-press').text(values.press);
-                if (isRemarksModified) itemDom.find('.book-remarks').text(values.remarks);
+        if (!isNameModified && !isPressModified && !isRemarksModified)
+            return;
+
+        // 获取 "修改记录" 对象
+        var localData = this.getLocalData();
+        if (!localData[categoryName])
+            localData[categoryName] = {};
+        if (!localData[categoryName][bookNumbring])
+            localData[categoryName][bookNumbring] = {};
+
+        // "修改记录" 对象内容修改
+        var values = localData[categoryName][bookNumbring];
+        if (!!values) {
+            if (isNameModified && !isNameNull) values.name = inputName;
+            if (isNameModified && isNameNull) !!values.name ? delete values.name : null;
+
+            if (isPressModified && !isPressNull) values.press = inputPress;
+            if (isPressModified && isPressNull) !!values.press ? delete values.press : null;
+
+            if (isRemarksModified && !isRemarksNull) values.remarks = inputRemarks;
+            if (isRemarksModified && isRemarksNull) !!values.remarks ? delete values.remarks : null;
+
+            if (!values.name && !values.press && !values.remarks) {
+                delete localData[categoryName][bookNumbring];
             }
-
-            // 保存到浏览器
-            this.setLocalData(localData);
         }
 
-        // console.log(this.getLocalData());
+        // 空对象清理
+        if (!!localData[categoryName] && $.isEmptyObject(localData[categoryName])) {
+            delete localData[categoryName];
+        }
+
+        // 修改源数据
+        rawBookData.name = inputName;
+        rawBookData.press = inputPress;
+        rawBookData.remarks = inputRemarks;
+
+        // 保存到浏览器
+        this.setLocalData(localData);
+
+        // 更新工具条
+        this.updateToolBar();
+
+        // 更新 BookList 中单个 item
+        this.bookListItemUpdate(bookNumbring);
     },
     isInputsFocused: function () {
         var isFocused = this.inputDoms.name.is(':focus'),
@@ -773,12 +848,15 @@ app.editor = {
     unbindKey: function() {
         $(document).unbind('keydown.editor_keys');
     },
-    redirectBook: function (bookIndex) {
-        if (isNaN(bookIndex))
+    redirectBook: function (bookIndex, saveCurrentBook) {
+        if (isNaN(bookIndex) || bookIndex < 0)
             return;
 
         // 在跳转之前 保存当前图书
-        this.saveCurrentBook();
+        if (saveCurrentBook === undefined)
+            saveCurrentBook = true;
+        if (typeof(saveCurrentBook) === 'boolean' && saveCurrentBook)
+            this.saveCurrentBook();
 
         bookIndex = Number(bookIndex);
         var bookNumbering = bookIndex + 1;
@@ -794,7 +872,7 @@ app.editor = {
         dom.html('');
 
         for (var i = this.currentCategoryBooks.length - 1; i >= 0; i--) {
-            this.bookListItemRender(i, this.currentCategoryBooks[i]).appendTo(dom);
+            this.bookListItemRender(this.currentCategoryBooks[i]).appendTo(dom);
         }
 
         dom.unbind('click.editor_book_list');
@@ -806,12 +884,14 @@ app.editor = {
             }
         });
     },
-    bookListItemRender: function (index, item) {
+    bookListItemRender: function (item) {
+        var categoryName = this.getCurrentCategoryName();
+
         var numbering = item['numbering'],
             numberingFull = app.editor.getCurrentCategoryName() + ' ' + numbering,
-            bookName = item['name'],
-            bookPress = item['press'],
-            bookRemarks = item['remarks'];
+            bookName = item['name'] || '',
+            bookPress = item['press'] || '',
+            bookRemarks = item['remarks'] || '';
 
         var itemDom = $(
             '<div class="list-item" data-numbering="' + numbering + '">' +
@@ -827,25 +907,44 @@ app.editor = {
         itemDom.find('.book-press').text(bookPress);
         itemDom.find('.book-remarks').text(bookRemarks);
 
+        var localData = this.getLocalData();
+        var bookModifieds = localData[categoryName];
+        if (!!bookModifieds && !!bookModifieds[numbering]) {
+            itemDom.addClass('is-modified');
+        }
+
         return itemDom;
+    },
+    bookListItemUpdate: function (numbering) {
+        if (numbering > this.currentCategoryBooks.length) {
+            app.notify.error('bookListItemUpdate() 错误：Numbering 超出 currentCategoryBooks 长度');
+            return;
+        }
+
+        var itemDom = this.getBookListItemDom(numbering);
+        var book = this.currentCategoryBooks[numbering - 1];
+
+        itemDom.replaceWith(this.bookListItemRender(book));
     },
     getBookListItemDom: function (numbering) {
         return this.bookListContentDom.find('[data-numbering=' + numbering + ']');
     },
     scrollToBookListItem: function (numbering) {
         var itemDom = this.getBookListItemDom(numbering <= this.getLastNumbering() ? numbering : this.getLastNumbering());
+        if (!itemDom || itemDom.length <= 0) return;
         var scrollTop = (itemDom.offset().top - app.editor.bookListContentDom.offset().top);
         this.bookListDom.stop(true).animate({scrollTop: scrollTop}, 150);
         // this.bookListDom.stop(true).scrollTop(scrollTop);
     },
     updateBooksFromServer: function() {
-        var index = this.currentCategoryIndex;
+        var categoryIndex = this.currentCategoryIndex;
+        var currentEditingBookIndex = this.currentBookIndex;
         app.pageLoader.show('正在更新图书数据');
-        app.api.getCategoryBooks(index, function () {
+        app.api.getCategoryBooks(categoryIndex, function () {
             app.pageLoader.hide();
             app.editor.exit();
-            app.editor.startWork(index);
-            app.notify.success('已更新');
+            app.editor.startWork(categoryIndex, currentEditingBookIndex);
+            app.notify.success('更新完毕');
         }, function () {
             app.pageLoader.hide();
             app.notify.error('更新失败');
@@ -949,7 +1048,7 @@ app.api = {
                 if (!!data) {
                     onSuccess(data);
                 } else {
-                    onError();
+                    onError(data);
                 }
             }, error: function () {
                 app.notify.error('网络错误，用户资料无法失败');
@@ -982,7 +1081,7 @@ app.api = {
                     app.data.categoris = data['categories'];
                     onSuccess(data);
                 } else {
-                    onError();
+                    onError(data);
                 }
             }, error: function () {
                 app.notify.error('网络错误，类目列表无法失败');
@@ -1001,10 +1100,11 @@ app.api = {
                 'user': app.data.getUser()
             }, success: function (data) {
                 var resp = app.api.responseHandle(data);
-                if (resp.checkMakeNotify()) {
+                data = resp.checkGetData();
+                if (!!data) {
                     onSuccess(data);
                 } else {
-                    onError();
+                    onError(data);
                 }
             }, error: function () {
                 app.notify.error('网络错误，类目无法创建');
@@ -1053,7 +1153,7 @@ app.api = {
 
         var localData = app.editor.getLocalData();
         if (!localData || $.isEmptyObject(localData)) {
-            app.notify.info('没有修改数据，无需上传');
+            app.notify.info('图书没有任何改动，无需上传');
             return;
         }
 
@@ -1072,6 +1172,7 @@ app.api = {
                     // 数据修改 清空
                     app.editor.setLocalData({});
                 }
+                app.editor.updateToolBar();
             }, error: function () {
                 app.pageLoader.hide();
                 app.notify.error('网络错误，图书数据无法上传');
@@ -1193,11 +1294,10 @@ app.dialog = {
     }
 };
 
-var appUtils = {
+$.extend({
     timeAgo: function (date) {
-        if (!date || isNaN(date) || date === 0) {
+        if (!date || isNaN(date) || date === 0)
             return '未知';
-        }
 
         // 获取js 时间戳
         var time = new Date().getTime();
@@ -1223,7 +1323,7 @@ var appUtils = {
         }
     },
     checkLocalTime: function () {
-        $.ajax({
+        /*$.ajax({
             url: '/getTime', beforeSend: function () {
 
             }, success: function (data) {
@@ -1244,7 +1344,7 @@ var appUtils = {
             }, error: function () {
                 app.notify.warning('网络错误，服务器当前时间戳获取失败')
             }
-        });
+        });*/
     },
     htmlEncode: function (value) {
         var div = document.createElement('div');
@@ -1255,10 +1355,20 @@ var appUtils = {
         var div = document.createElement('div');
         div.innerHTML = value;
         return div.innerText || div.textContent;
-    }
-};
-
-$.extend({
+    },
+    countObj: function (o){
+        var t = typeof o;
+        if(t === 'string'){
+            return o.length;
+        }else if(t === 'object'){
+            var n = 0;
+            for(var i in o){
+                n++;
+            }
+            return n;
+        }
+        return false;
+    },
     getPosition: function ($element) {
         var el = $element[0];
         var isBody = el.tagName === 'BODY';

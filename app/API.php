@@ -117,7 +117,7 @@ class Api extends ApiBase
             
             $apiData[$index] = [
                 'name'              => $item->name,
-                'user'              => $item->user,
+                'user'              => '测试',
                 'remarks'           => $item->remarks,
                 'books_count'       => $item->books->count(),
                 'updated_at'        => $item->updated_at->timestamp,

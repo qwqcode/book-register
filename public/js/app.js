@@ -96,10 +96,15 @@ app.main = {
             var yourName = $(this).find('#yourName');
             var yourNameVal = $.trim(yourName.val());
             if (yourNameVal.length < 1) {
-                app.notify.error('请填入你的真实姓名');
+                app.notify.warning('请填入你的真实姓名');
+                return false;
+            }
+            if (yourNameVal.length > 4) {
+                app.notify.warning('名字只允许最多 4 个字');
                 return false;
             }
 
+            app.notify.info('欢迎使用 書記 Online');
             app.main.toggleCategoryList(yourNameVal);
 
             return false;

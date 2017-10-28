@@ -329,6 +329,8 @@ app.main.categoryListInit = function (appendingDom) {
         if (!app.data.getUser())
             return;
 
+        headDom.find('.user .username').text(app.data.getUser());
+
         var bookCountDom = headDom.find('.user .book-count');
         bookCountDom.text('战绩：加载中...');
         app.api.getUser(app.data.getUser(), function (data) {

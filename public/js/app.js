@@ -138,6 +138,43 @@ app.main = {
 
     uploadBooks: function () {
         app.api.uploadCategory();
+    },
+
+    showRanking: function () {
+        app.main.categoryList.setLoading(true);
+        app.api.getRanking(function (data) {
+            app.main.categoryList.setLoading(false);
+            var bookRanking = data['book_ranking'];
+            var rankingDom = $(
+                '<div class="dialog-ranking">' +
+                '<div class="site-total"></div>' +
+                '<div class="book-ranking"></div>' +
+                '</div>'
+            );
+            rankingDom.find('.site-total').html('<i class="zmdi zmdi-cloud-outline-alt"></i> 全站目前共有 ' + data['site_category_total'] + ' 个类目，' + data['site_book_total'] + ' 本图书记录');
+            var bookRankingDom = rankingDom.find('.book-ranking');
+            for (var i in bookRanking) {
+                var item = bookRanking[i],
+                    number = Number(i) + 1;
+                var rankingItem = $(
+                    '<div class="book-ranking-item" data-number="' + number + '">' +
+                    '<span class="number"></span>' +
+                    '<span class="user-name"></span>' +
+                    '<span class="book-count"></span>' +
+                    '<span class="percentage"></span>' +
+                    '</div>'
+                );
+                rankingItem.find('.number').text(number);
+                rankingItem.find('.user-name').text(item['user_name'] || '无名英雄');
+                rankingItem.find('.book-count').text(item['book_count'] + ' 本书');
+                rankingItem.find('.percentage').text(item['percentage'] + '%');
+                rankingItem.appendTo(bookRankingDom);
+            }
+            app.dialog.build('战绩排名', rankingDom);
+        }, function () {
+            app.main.categoryList.setLoading(false);
+        });
+
     }
 };
 
@@ -164,8 +201,8 @@ app.main.categoryListInit = function (appendingDom) {
         '<span class="list-actions">' +
         '<a data-toggle="refresh-data"><i class="zmdi zmdi-refresh"></i> 刷新列表</a>' +
         '<a data-toggle="upload-books"><i class="zmdi zmdi-cloud-upload"></i> 上传图书</a>' +
-        '<a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 数据导出</a>' +
         '<a data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建类目</a>' +
+        '<a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 数据导出</a>' +
         '</span>' +
         '</span>' +
         '</div>' +
@@ -186,6 +223,11 @@ app.main.categoryListInit = function (appendingDom) {
             app.main.toggleLogin();
             app.data.clearUser();
         }], ['取消', null]);
+    });
+
+    // Show Ranking
+    headDom.find('.book-count').click(function () {
+        app.main.showRanking();
     });
 
     // Create Category Btn
@@ -296,7 +338,7 @@ app.main.categoryListInit = function (appendingDom) {
                         '<span class="percentage">' + user['percentage'] + '%</span>' +
                         '</span>').appendTo(content.find('.users-list'));
                 }
-                app.dialog.build('类目 ' + categoryName, content);
+                var dialog = app.dialog.build('类目 ' + categoryName, content);
             });
             itemDom.appendTo(contentDom);
 
@@ -1159,7 +1201,7 @@ app.api = {
                     app.api.handleCategoryData(app.data.categoris[categoryDataIndex]);
                     onSuccess(data);
                 } else {
-                    onError();
+                    onError(data);
                 }
             }, error: function () {
                 app.notify.error('网络错误，类目图书无法下载');
@@ -1199,6 +1241,28 @@ app.api = {
             }, error: function () {
                 app.pageLoader.hide();
                 app.notify.error('网络错误，图书数据无法上传');
+            }
+        });
+    },
+
+    getRanking: function (onSuccess, onError) {
+        onSuccess = onSuccess || function () {};
+        onError = onError || function () {};
+
+        $.ajax({
+            url: '/getRanking', data: {
+
+            }, success: function (data) {
+                var resp = app.api.responseHandle(data);
+                data = resp.checkGetData();
+                if (!!data) {
+                    onSuccess(data);
+                } else {
+                    onError(data);
+                }
+            }, error: function () {
+                app.notify.error('网络错误，排名无法获取');
+                onError();
             }
         });
     }
@@ -1315,6 +1379,13 @@ app.dialog = {
                 dialogLayerHide();
             });
         }
+
+        var obj = {};
+        obj.getDom = function () {
+            return dialogDom;
+        };
+
+        return obj;
     }
 };
 

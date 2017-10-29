@@ -5,6 +5,7 @@ namespace App;
 use App\Models\Book;
 use App\Models\Category;
 use Illuminate\Database\Capsule\Manager;
+use Illuminate\Support\Collection;
 use Monolog\Logger;
 use Slim\App;
 use Slim\Exception\NotFoundException;
@@ -26,6 +27,7 @@ class Api extends ApiBase
             ['GET', '/', 'index'],
             ['GET', '/getTime', 'getTime'],
             ['GET', '/getUser', 'getUser'],
+            ['GET', '/getRanking', 'getRanking'],
             ['GET', '/getCategory', 'getCategory'],
             ['POST', '/uploadCategory', 'uploadCategory'],
             ['GET', '/categoryCreate', 'categoryCreate'],
@@ -86,6 +88,33 @@ class Api extends ApiBase
         return $this->success($response, '获取用户资料成功', [
             'category_total' => $categoryTotal,
             'book_total'     => $bookTotal,
+        ]);
+    }
+    
+    /**
+     * 获取排名
+     *
+     * @inheritdoc
+     */
+    public function getRanking(Request $request, Response $response, $args)
+    {
+        $userBookRanking = new Collection();
+        $siteBookTotal = $this->tableBook()->count();
+        $siteCategoryTotal = $this->tableCategory()->get()->count();
+        $userBooks = $this->tableBook('`category_name` ASC')->get()->groupBy('user')->all();
+        foreach ($userBooks as $userName => $books) {
+            $userBookCount = $books->count();
+            $userBookRanking->push([
+                'user_name' => $userName,
+                'book_count' => $userBookCount,
+                'percentage' => $userBookCount > 0 ? round(($userBookCount / $siteBookTotal) * 100, 2) : 0
+            ]);
+        }
+        
+        return $this->success($response, '获取排名数据成功', [
+            'book_ranking' => $userBookRanking->sortByDesc('book_count')->values()->toArray(),
+            'site_category_total' => $siteCategoryTotal,
+            'site_book_total' => $siteBookTotal,
         ]);
     }
     

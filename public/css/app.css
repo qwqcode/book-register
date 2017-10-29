@@ -675,7 +675,7 @@ a {
 
 .editor .editor-inserter .pre-book-btn:active,
 .editor .editor-inserter .nxt-book-btn:active {
-    background: #00acf7;
+    background: #2196F3;
     color: #FFF;
 }
 
@@ -805,7 +805,7 @@ a {
 }
 
 .editor .editor-book-list .list-content .list-item.edit-focused {
-    color: #2196f3;
+    color: #03A9F4;
     font-weight: bold;
     box-shadow: 0 1px 2px rgba(0,0,0,.035);
     border: 1px solid #f5f5f5;
@@ -918,8 +918,10 @@ a {
 
 .dialog-layer .dialog-inner {
     display: flex;
+    position: relative;
     flex-direction: column;
     width: 430px;
+    max-height: 50vh;
     padding: 15px 0;
     border-radius: 2px;
     background-color: #fff;
@@ -962,7 +964,7 @@ a {
     color: #707070;
     overflow-x: hidden;
     overflow-y: auto;
-    max-height: 200px;
+    max-height: 40vh;
     word-break: break-all;
 }
 
@@ -1017,6 +1019,58 @@ a {
 
 .dialog-layer .dialog-category-users .users-list .user-item > span:not(:last-child) {
     margin-right: 10px;
+}
+
+.dialog-layer .dialog-ranking {}
+
+.dialog-layer .dialog-ranking .site-total {
+    display: block;
+    text-align: center;
+    font-size: 14px;
+    padding: 0 20px 5px 20px;
+    margin-bottom: 15px;
+}
+
+.dialog-layer .dialog-ranking .site-total > i {
+    color: #03A9F4;
+    margin-right: 10px;
+}
+
+.dialog-layer .dialog-ranking .book-ranking {
+}
+
+.dialog-layer .dialog-ranking .book-ranking .site-total {}
+
+.dialog-layer .dialog-ranking .book-ranking .book-ranking-item {
+    display: flex;
+}
+
+.dialog-layer .dialog-ranking .book-ranking .book-ranking-item > span {
+    flex: 1;
+}
+
+.dialog-layer .dialog-ranking .book-ranking .book-ranking-item > span:not(:last-child) {
+    margin-right: 15px;
+}
+
+.dialog-layer .dialog-ranking .book-ranking .book-ranking-item[data-number="1"] {
+    color: #03A9F4;
+}
+
+.dialog-layer .dialog-ranking .book-ranking .book-ranking-item[data-number="2"] {
+    color: #03A9F4;
+}
+
+.dialog-layer .dialog-ranking .book-ranking .book-ranking-item[data-number="3"] {
+    color: #03A9F4;
+}
+
+.dialog-layer .dialog-ranking .book-ranking .book-ranking-item > span.number {
+    flex: inherit;
+    flex-basis: 40px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 /* loader */

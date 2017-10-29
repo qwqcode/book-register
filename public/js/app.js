@@ -266,6 +266,7 @@ app.main.categoryListInit = function (appendingDom) {
                 '</span>' +
                 '</div>' +
                 '<div class="item-meta">' +
+                '<a class="user"><i class="zmdi zmdi-account-circle"></i> ' + item['user'] + '</a>' +
                 '<a class="users"><i class="zmdi zmdi-mood"></i> ' + $.countObj(item['users']) + ' 人</a>' +
                 '<a class="book-count"><i class="zmdi zmdi-run"></i> ' + item['books_count'] + ' 本书</a>' +
                 '</div>' +

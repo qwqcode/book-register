@@ -1282,7 +1282,7 @@ app.dialog = {
         };
 
         var dialogDom = $('<div class="dialog-inner"><div class="dialog-title">'+title+'</div>\n<div class="dialog-content"></div></div>').appendTo(dialogLayerDom);
-        $(content).appendTo(dialogDom.find('.dialog-content'));
+        dialogDom.find('.dialog-content').append(content);
 
         // 底部按钮
         if (!!yesBtn || !!cancelBtn) {

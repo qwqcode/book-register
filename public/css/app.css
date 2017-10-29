@@ -354,7 +354,7 @@ a {
 }
 
 .category-list .list-content .item-inner:hover {
-    z-index: 950;
+    z-index: 20;
     transform: translate3d(0, -4px, 0);
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
 }
@@ -439,6 +439,7 @@ a {
     align-items: center;
     justify-content: center;
     transition: background 0.15s ease-in-out;
+    z-index: 50;
 }
 
 /* .create-category-dialog-layer */

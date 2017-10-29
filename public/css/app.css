@@ -378,19 +378,25 @@ a {
 }
 
 .category-list .list-content .item .item-meta {
-    color: #999;
     padding: 10px 25px 20px 25px;
 }
 
-.category-list .list-content .item .item-meta > span {}
+.category-list .list-content .item .item-meta > a {
+    cursor: pointer;
+    color: #999;
+}
 
-.category-list .list-content .item .item-meta > span:not(:last-child) {
+.category-list .list-content .item .item-meta > a:hover {
+    color: #5fa3ff;
+}
+
+.category-list .list-content .item .item-meta > a:not(:last-child) {
     padding-right: 10px;
     margin-right: 10px;
     border-right: 1px solid #eff3f5;
 }
 
-.category-list .list-content .item .item-meta > span > i {
+.category-list .list-content .item .item-meta > a > i {
     color: #5fa3ff;
     font-style: normal;
     margin-right: 4px;
@@ -985,6 +991,31 @@ a {
 
 .dialog-layer .dialog-bottom .dialog-btn:not(first-child) {
     margin-left: 5px;
+}
+
+.dialog-layer .dialog-category-users {}
+
+.dialog-layer .dialog-category-users .created {
+    margin-bottom: 10px;
+}
+
+.dialog-layer .dialog-category-users .workers {
+}
+
+.dialog-layer .dialog-category-users .users-list {
+    display: block;
+    margin: 7px 10px;
+}
+
+.dialog-layer .dialog-category-users .users-list .user-item {
+    display: block;
+    font-size: 12px;
+}
+
+.dialog-layer .dialog-category-users .users-list .user-item > span {}
+
+.dialog-layer .dialog-category-users .users-list .user-item > span:not(:last-child) {
+    margin-right: 10px;
 }
 
 /* loader */

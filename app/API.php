@@ -114,12 +114,25 @@ class Api extends ApiBase
         $apiData = [];
         foreach ($categories as $index => $item) {
             /** @var $item Category */
+            $booksCount = $item->books->count();
+            
+            $users = [];
+            $workers = $item->books->groupBy('user')->keys()->all();
+            foreach ($workers as $username) {
+                $userBookCount = $item->books->where('user', $username)->count();
+                $users[] = [
+                    'username' => $username,
+                    'books_count' => $userBookCount,
+                    'percentage' => $booksCount > 0 ? round(($userBookCount / $booksCount) * 100, 2) : 0
+                ];
+            }
             
             $apiData[$index] = [
                 'name'              => $item->name,
-                'user'              => '测试',
+                'user'              => $item->user,
+                'users'             => $users,
                 'remarks'           => $item->remarks,
-                'books_count'       => $item->books->count(),
+                'books_count'       => $booksCount,
                 'updated_at'        => $item->updated_at->timestamp,
                 'created_at'        => $item->created_at->timestamp,
                 'updated_at_format' => $item->updated_at->toDateTimeString(),
@@ -186,7 +199,7 @@ class Api extends ApiBase
             
             if (!$this->tableBook()->where($attributes)->exists())
                 $values = array_merge($values, ['created_at' => $time]);
-            
+    
             $this->tableBook()->updateOrInsert($attributes, $values);
             
             return;
@@ -213,9 +226,10 @@ class Api extends ApiBase
                     $bookTotal++;
                 }
                 
-                $category->update([
+                $updateValues = [
                     'updated_at' => $time
-                ]);
+                ];
+                $category->update($updateValues);
             } catch (\Exception $exception) {
                 $error = $categoryName . '类 图书数据导入错误： ' . $exception->getMessage();
                 $this->logger->error($error);
@@ -305,17 +319,17 @@ class Api extends ApiBase
                 'name'      => '',
                 'press'     => '',
                 'remarks'   => '',
+                'user'      => '',
             ];
             
             // 搜寻是否有当前 numbering 的图书数据
             foreach ($booksArr as $bookItem) {
                 if ($bookItem['numbering'] == $numbering) {
-                    $data[$index] = [
-                        'numbering' => strval($numbering),
-                        'name'      => $bookItem['name'],
-                        'press'     => $bookItem['press'],
-                        'remarks'   => $bookItem['remarks'],
-                    ];
+                    $data[$index]['numbering'] = strval($numbering);
+                    $data[$index]['name'] = $bookItem['name'] ?? '';
+                    $data[$index]['press'] = $bookItem['press'] ?? '';
+                    $data[$index]['remarks'] = $bookItem['remarks'] ?? '';
+                    $data[$index]['user'] = $bookItem['user'] ?? '';
                     break;
                 }
             }
@@ -369,7 +383,6 @@ class Api extends ApiBase
         
         $buildSingleCategoryData = function (Category $categoryData) {
             $categoryName = $categoryData->name;
-            $user = $categoryData->user ?? '';
             
             if (empty($categoryName))
                 return null;
@@ -397,7 +410,7 @@ class Api extends ApiBase
                     $bookItem['name'],
                     $bookItem['press'],
                     $bookItem['remarks'],
-                    $user,
+                    $bookItem['user'],
                 ];
             }
             

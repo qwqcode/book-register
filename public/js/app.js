@@ -253,6 +253,8 @@ app.main.categoryListInit = function (appendingDom) {
         var categories = categoryData || app.data.categoris;
         contentDom.html('');
         var itemRender = function (index, item) {
+            var categoryName = $.htmlEncode(item['name'] || "未命名");
+
             var itemDom = $(
                 '<div class="item col-sm-6 col-md-3' + (item.isMine() ? ' is-mine' : '') + '' +
                 (String(item['remarks']).indexOf('已完成') >= 0 ? ' is-completed' : '') +
@@ -260,22 +262,41 @@ app.main.categoryListInit = function (appendingDom) {
                 '<div class="item-inner">' +
                 '<div class="item-head">' +
                 '<span class="category-name">' +
-                $.htmlEncode(item['name'] || "未命名") +
+                categoryName +
                 '</span>' +
                 '</div>' +
                 '<div class="item-meta">' +
-                '<span class="users"><i class="zmdi zmdi-account"></i> ' + $.htmlEncode(item['user'] || "未知") + '</span>' +
-                '<span><i class="zmdi zmdi-cloud-upload"></i> ' + $.timeAgo(item['updated_at']) + '</span>' +
-                '<span><i class="zmdi zmdi-check"></i> ' + item['books_count'] + '</span>' +
-                '<!--<span><i class="zmdi zmdi-time"></i> ' + $.timeAgo(item['created_at']) + '</span>-->' +
+                '<a class="users"><i class="zmdi zmdi-mood"></i> ' + $.countObj(item['users']) + ' 人</a>' +
+                '<a class="book-count"><i class="zmdi zmdi-run"></i> ' + item['books_count'] + ' 本书</a>' +
                 '</div>' +
                 '</div>' +
                 '</div>'
             );
             itemDom.find('.item-head').click(function () {
-                obj.onItemClick(index);
+                obj.startWork(index);
             });
-            itemDom.find('.item-meta');
+            itemDom.find('.item-meta > a').click(function () {
+                var content = $(
+                    '<div class="dialog-category-users">' +
+                    '<div class="created">创建者：' + item['user'] + '</div>' +
+                    '<div class="created">总图书：' + item['books_count'] + ' 本</div>' +
+                    '<div class="workers">贡献者（' + $.countObj(item['users']) + '）：<span class="users-list"></span></div>' +
+                    '<div class="updated-at">最新更新：' + $.dateFormat(item['updated_at'] * 1000) + '（' + $.timeAgo(item['updated_at']) + '）</div>' +
+                    '<div class="updated-at">创建日期：' + $.dateFormat(item['created_at'] * 1000) + '（' + $.timeAgo(item['created_at']) + '）</div>' +
+                    '</div>'
+                );
+
+                for (var i in item['users']) {
+                    var user = item['users'][i];
+                    var userName = $.trim(user['username']).length > 0 ? $.trim(user['username']) : '无名英雄';
+                    $('<span class="user-item">' +
+                        '<span class="username">' + userName + '</span>' +
+                        '<span class="book-count">' + user['books_count'] + ' 本书</span>' +
+                        '<span class="percentage">' + user['percentage'] + '%</span>' +
+                        '</span>').appendTo(content.find('.users-list'));
+                }
+                app.dialog.build('类目 ' + categoryName, content);
+            });
             itemDom.appendTo(contentDom);
 
             // 滚动归零
@@ -298,25 +319,19 @@ app.main.categoryListInit = function (appendingDom) {
         return true;
     };
 
-    obj.onItemClick = function (categoryDataIndex) {
+    obj.startWork = function (categoryDataIndex) {
         var categoryData = app.data.categoris[categoryDataIndex];
         if (!categoryData) {
             app.notify.error('类目是不存在的，index=' + categoryDataIndex);
             return;
         }
 
-        var categoryName = categoryData['name'];
-        if (!categoryName) {
+        if (!categoryData['name']) {
             app.notify.error('不知名的类目...');
             return;
         }
 
-        this.startWork(categoryDataIndex);
-    };
-
-    obj.startWork = function (categoryDataIndex) {
         obj.setLoading(true);
-
         app.api.getCategoryBooks(categoryDataIndex, function () {
             // 当图书数据下载完毕
             obj.update();
@@ -1265,7 +1280,8 @@ app.dialog = {
             }, 200);
         };
 
-        var dialogDom = $('<div class="dialog-inner"><div class="dialog-title">'+title+'</div>\n<div class="dialog-content">'+content+'</div></div>').appendTo(dialogLayerDom);
+        var dialogDom = $('<div class="dialog-inner"><div class="dialog-title">'+title+'</div>\n<div class="dialog-content"></div></div>').appendTo(dialogLayerDom);
+        $(content).appendTo(dialogDom.find('.dialog-content'));
 
         // 底部按钮
         if (!!yesBtn || !!cancelBtn) {
@@ -1302,6 +1318,27 @@ app.dialog = {
 };
 
 $.extend({
+    dateFormat: function (fdate, formatStr){
+        var fTime, fStr = 'ymdhis';
+        if (!formatStr)
+            formatStr= "y-m-d h:i:s";
+        if (fdate)
+            fTime = new Date(fdate);
+        else
+            fTime = new Date();
+        var formatArr = [
+            fTime.getFullYear().toString(),
+            (fTime.getMonth()+1).toString(),
+            fTime.getDate().toString(),
+            fTime.getHours().toString(),
+            fTime.getMinutes().toString(),
+            fTime.getSeconds().toString()
+        ];
+        for (var i=0; i<formatArr.length; i++){
+            formatStr = formatStr.replace(fStr.charAt(i), formatArr[i]);
+        }
+        return formatStr;
+    },
     timeAgo: function (date) {
         if (!date || isNaN(date) || date === 0)
             return '未知';

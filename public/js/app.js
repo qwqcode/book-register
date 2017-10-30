@@ -5,6 +5,7 @@ $(document).ready(function () {
     app.data.register();
     app.main.register();
     app.editor.register();
+    app.socket.register();
 
     app.notify.info('程序初始化完毕');
     app.notify.setShowEnabled(true);
@@ -1265,6 +1266,46 @@ app.api = {
                 onError();
             }
         });
+    }
+};
+
+app.socket = {
+    ws: null,
+    register: function () {
+        app.socket.tryConnect();
+        // Check
+        setInterval(function () {
+            try {
+                app.socket.tryConnect();
+            } catch (e) {}
+        }, 3000);
+    },
+    tryConnect: function () {
+        if (app.data.getUser().length < 1 || this.ws !== null)
+            return;
+
+        this.ws = new WebSocket("ws://127.0.0.1:51230");
+        this.ws.onopen = function (e) {
+            console.log('Connection to server opened');
+            app.socket.sendMessage(app.data.getUser());
+        };
+        this.ws.onmessage = function (msg) {
+            console.log('app.socket: ' + msg.data);
+        };
+        this.ws.onclose = function () {
+            app.socket.ws = null;
+            console.log('Connection to server closed');
+        };
+    },
+    sendMessage: function (msg) {
+        if (this.ws === null)
+            return;
+
+        this.ws.send(msg);
+    },
+    getCurrentUsers: function () {
+        this.sendMessage('__getUsers');
+        return true;
     }
 };
 

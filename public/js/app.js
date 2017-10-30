@@ -1284,7 +1284,7 @@ app.socket = {
         if (app.data.getUser().length < 1 || this.ws !== null)
             return;
 
-        this.ws = new WebSocket("ws://127.0.0.1:51230");
+        this.ws = new WebSocket('ws://' + window.location.host + ':51230');
         this.ws.onopen = function (e) {
             console.log('Connection to server opened');
             app.socket.sendMessage(app.data.getUser());

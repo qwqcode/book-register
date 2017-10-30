@@ -265,6 +265,10 @@ a {
     content: '\f216';
 }
 
+.category-list .list-head .user > .current-online:before {
+    content: '\f21c';
+}
+
 .category-list .list-head .right-part {
     display: inline-block;
     float: right;
@@ -857,10 +861,11 @@ a {
 /* notify */
 .notify-layer {
     position: absolute;
-    top: 22px;
-    right: 71px;
+    top: 75px;
+    right: 3rem;
     width: 280px;
     z-index: 1001;
+    opacity: .83;
 }
 
 .notify-layer .notify-item {
@@ -897,7 +902,8 @@ a {
 }
 
 .notify-layer .notify-item p {
-    padding: 15px 20px;
+    line-height: 1.8;
+    padding: 10px 20px;
     margin: 0;
     text-align: center;
 }

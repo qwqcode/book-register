@@ -192,6 +192,7 @@ app.main.categoryListInit = function (appendingDom) {
         '<div class="user">' +
         '<a class="username" data-toggle="user-logout">' + $.htmlEncode(app.data.getUser() || '无名英雄') + '</a>' +
         '<a class="book-count"></a>' +
+        '<a class="current-online">在线：加载中...</a>' +
         '</div>' +
         '</span>' +
 
@@ -265,12 +266,26 @@ app.main.categoryListInit = function (appendingDom) {
         $(this).select();
     });
 
+    // Current Online
+    var onlineUsersStr = '';
+    headDom.find('.current-online').click(function () {
+        if (onlineUsersStr.length <= 0)
+            return;
+
+        app.dialog.build('在线成员', onlineUsersStr);
+    });
+
     obj.getDom = function () {
         return dom;
     };
 
     obj.getHead = function () {
         return headDom;
+    };
+
+    obj.setHeadOnline = function (num, str) {
+        headDom.find('.current-online').text('在线：' + num);
+        onlineUsersStr = str;
     };
 
     obj.updateFromServer = function (onAfter) {
@@ -1270,42 +1285,77 @@ app.api = {
 };
 
 app.socket = {
-    ws: null,
+    url: 'ws://' + window.location.host + ':51230',
+    webSocket: null,
     register: function () {
-        app.socket.tryConnect();
+        var checker = function () {
+            app.socket.tryConnect();
+        };
+
+        checker();
+
         // Check
         setInterval(function () {
-            try {
-                app.socket.tryConnect();
-            } catch (e) {}
-        }, 3000);
+            checker();
+            app.socket.getOnline();
+        }, 4000);
     },
+    enableNotify: true,
     tryConnect: function () {
-        if (app.data.getUser().length < 1 || this.ws !== null)
+        if (app.data.getUser().length < 1 || this.webSocket !== null)
             return;
 
-        this.ws = new WebSocket('ws://' + window.location.host + ':51230');
-        this.ws.onopen = function (e) {
-            console.log('Connection to server opened');
-            app.socket.sendMessage(app.data.getUser());
+        this.webSocket = new WebSocket(this.url);
+
+        this.webSocket.onopen = function (obj) {
+            app.socket.debugLog('远程服务器已连接');
+            app.socket.sendData('register', {user: app.data.getUser()});
+            app.socket.getOnline();
         };
-        this.ws.onmessage = function (msg) {
-            console.log('app.socket: ' + msg.data);
+
+        this.webSocket.onmessage = function (obj) {
+            // app.socket.debugLog('接收消息: ' + obj.data);
+
+            var data = JSON.parse(obj.data);
+            switch (data['type']) {
+                case 'notify':
+                    if (!app.socket.enableNotify)
+                        return;
+                    app.notify.show(data['msg'], data['level']);
+                    break;
+                case 'getOnline':
+                    app.main.categoryList.setHeadOnline(data['online_total'], data['str']);
+                    break;
+            }
         };
-        this.ws.onclose = function () {
-            app.socket.ws = null;
-            console.log('Connection to server closed');
+
+        this.webSocket.onclose = function () {
+            app.socket.webSocket = null;
+            app.socket.debugLog('远程服务器已断开');
         };
     },
-    sendMessage: function (msg) {
-        if (this.ws === null)
+    sendData: function (type, data) {
+        if (typeof (type) !== 'string' || typeof (data) !== 'object') {
+            this.log('将要发送的数据类型有误');
+            return;
+        }
+
+        if (this.webSocket === null || this.webSocket.readyState !== 1)
             return;
 
-        this.ws.send(msg);
+        data.type = type;
+        this.webSocket.send(JSON.stringify(data));
     },
-    getCurrentUsers: function () {
-        this.sendMessage('__getUsers');
+    getOnline: function () {
+        this.sendData('getOnline', {});
         return true;
+    },
+    broadcastNotify: function (msg) {
+        this.sendData('broadcastNotify', {'msg': msg});
+        return true;
+    },
+    debugLog: function (msg) {
+        console.log('[app.socket] ' + msg);
     }
 };
 
@@ -1344,7 +1394,7 @@ app.notify = {
             layerDom = $('<div class="notify-layer" />').appendTo('body');
 
         var notifyDom = $('<div class="notify-item anim-fade-in ' + (!!level ? 'type-' + level : '') + '"><p class="notify-content"></p></div>');
-        notifyDom.find('.notify-content').text(message);
+        notifyDom.find('.notify-content').html($.htmlEncode(message).replace('\n', '<br/>'));
         notifyDom.prependTo(layerDom);
 
         var notifyRemove = function () {

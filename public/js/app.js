@@ -1321,7 +1321,8 @@ app.socket = {
                 case 'notify':
                     if (!app.socket.enableNotify)
                         return;
-                    app.notify.show(data['msg'], data['level']);
+                    // app.notify.show(data['msg'], data['level']);
+                    app.danmaku.show(data['msg']);
                     break;
                 case 'getOnline':
                     app.main.categoryList.setHeadOnline(data['online_total'], data['str']);
@@ -1356,6 +1357,31 @@ app.socket = {
     },
     debugLog: function (msg) {
         console.log('[app.socket] ' + msg);
+    }
+};
+
+/*
+transform: translateX(-910.301px) translateY(0px) translateZ(0px);
+    transition: -webkit-transform 0s linear;
+ */
+app.danmaku = {
+    show: function (message) {
+        var wrapDom = $('.danmaku-wrap');
+        if (wrapDom.length === 0)
+            wrapDom = $('<div class="danmaku-wrap" />').appendTo('body');
+
+        var bulletDom = $('<div class="danmaku-item"><p class="danmaku-message"></p></div>');
+        bulletDom.find('.danmaku-message').html($.htmlEncode(message));
+        bulletDom.prependTo(wrapDom);
+
+        var bottom = Math.floor(Math.random() * $(document.body).height() + 40);
+        bulletDom.css('bottom', bottom + 'px');
+        bulletDom.animate({right: $(document.body).width() + bulletDom.width()}, {
+            duration: 18000,
+            done: function(){
+                bulletDom.remove();
+            }
+        });
     }
 };
 

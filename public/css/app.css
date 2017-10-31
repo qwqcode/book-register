@@ -1238,3 +1238,29 @@ a {
     left: 9px;
     border-width: 9px;
 }
+
+.danmaku-wrap {
+
+}
+
+.danmaku-item {
+    position: fixed;
+    bottom:70px;
+    right:-500px;
+    display: inline-block;
+    width: 500px;
+    z-index: 99999;
+    transition: transform 0s linear;
+}
+
+.danmaku-message {
+    font-size: 25px;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    line-height: 1.125;
+    font-family: SimHei, "Microsoft JhengHei", Arial, Helvetica, sans-serif;
+    text-shadow: rgb(0, 0, 0) 1px 0px 1px, rgb(0, 0, 0) 0px 1px 1px, rgb(0, 0, 0) 0px -1px 1px, rgb(0, 0, 0) -1px 0px 1px;
+    white-space: pre;
+    pointer-events: none;
+    user-select: none;
+}

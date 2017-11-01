@@ -62,9 +62,7 @@ wss.on('connection', function (ws, req) {
                 break;
 
             case 'getOnline':
-                var onlineStr = '';
-                for (var i in users)
-                    onlineStr += users[i] + ', ';
+				var onlineStr = users.join(', ');
                 broadcast({
                     type: 'getOnline',
                     online_total: users.length,

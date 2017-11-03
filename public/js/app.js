@@ -1376,12 +1376,13 @@ app.danmaku = {
 
         var bottom = Math.floor(Math.random() * $(document.body).height() + 40);
         bulletDom.css('bottom', bottom + 'px');
-        bulletDom.animate({0: $(document.body).width() + bulletDom.width()}, {
-            duration: 10000,
+        bulletDom.animate({marginRight: $(document.body).width() + bulletDom.width()}, {
+            duration: 'normal',
+            easing: 'easeOutBounce',
             step: function(now, fx) {
-                $(this).css('transform', 'translateX(-' + now + 'px) translateY(0px) translateZ(0px)');
+                // $(this).css('transform', 'translateX(-' + now + 'px) translateY(0px) translateZ(0px)');
             },
-            easing: 'linear',
+            /*easing: 'linear',*/
             queue: false,
             done: function(){
                 bulletDom.remove();

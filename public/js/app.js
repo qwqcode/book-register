@@ -1,4 +1,4 @@
-/* Zneiat/library-register-server */
+/* Zneiat/book-register */
 $(document).ready(function () {
     $.checkLocalTime();
 

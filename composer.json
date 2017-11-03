@@ -1,40 +1,47 @@
 {
-    "name": "zneiat/library-register-server",
-    "description": "图书室图书登记任务",
-    "keywords": ["library-register"],
-    "license": "proprietary",
-    "authors": [
+    "name": "zneiat/book-register",
+    "description": "The Library book Registration Platform",
+    "keywords": ["book", "register", "library"],
+	"authors": [
         {
             "name": "ZNEIAT",
             "email": "zneiat@qq.com",
             "homepage": "http://www.qwqaq.com/"
         }
     ],
+    "license": "MIT",
+    "type": "project",
     "require": {
-        "php": ">=5.5.0",
-        "slim/slim": "^3.1",
-        "slim/php-view": "^2.0",
-        "monolog/monolog": "^1.17",
-        "illuminate/database": "~5.1",
-        "phpoffice/phpexcel": "^1.8"
+        "php": ">=7.0",
+        "laravel/lumen-framework": "5.5.*",
+        "vlucas/phpdotenv": "~2.2",
+        "maatwebsite/excel": "^2.1"
     },
     "require-dev": {
-        "phpunit/phpunit": ">=4.8 < 6.0"
+        "fzaninotto/faker": "~1.4",
+        "mockery/mockery": "~1.0",
+        "phpunit/phpunit": "~6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": []
     },
     "autoload-dev": {
-        "psr-4": {
-            "App\\": "app/",
-            "Tests\\": "tests/"
-        }
-    },
-    "config": {
-        "process-timeout" : 0
+        "classmap": [
+            "tests/",
+            "database/"
+        ]
     },
     "scripts": {
-        "start": "php -S localhost:8080 -t public public/index.php",
-        "test": "phpunit",
-		"post-root-package-install": [
-            "php -r \"copy('database-config.example.php', 'database-config.php');\""
+        "post-root-package-install": [
+            "php -r \"copy('.env.example', '.env');\""
         ]
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "optimize-autoloader": true
     }
 }

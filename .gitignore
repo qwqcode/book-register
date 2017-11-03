@@ -29,9 +29,9 @@ phpunit.phar
 # vagrant runtime
 /.vagrant
 
-# logs dir
-/logs/*
-!/logs/README.md
+# Homestead
+Homestead.json
+Homestead.yaml
 
 # local config Files
-/database-config.php
+.env

@@ -1285,11 +1285,13 @@ app.api = {
 };
 
 app.socket = {
-    url: 'ws://' + window.location.host + ':51230',
+    url: 'ws://' + document.domain + ':51230',
     webSocket: null,
     register: function () {
         var checker = function () {
-            app.socket.tryConnect();
+            try {
+                app.socket.tryConnect();
+            } catch (e) {}
         };
 
         checker();
@@ -1376,13 +1378,12 @@ app.danmaku = {
 
         var bottom = Math.floor(Math.random() * $(document.body).height() + 40);
         bulletDom.css('bottom', bottom + 'px');
-        bulletDom.animate({marginRight: $(document.body).width() + bulletDom.width()}, {
-            duration: 'normal',
-            easing: 'easeOutBounce',
+        bulletDom.animate({0: $(document.body).width() + bulletDom.width()}, {
+            duration: 8000,
             step: function(now, fx) {
-                // $(this).css('transform', 'translateX(-' + now + 'px) translateY(0px) translateZ(0px)');
+                $(this).css('transform', 'translateX(-' + now + 'px) translateY(0px) translateZ(0px)');
             },
-            /*easing: 'linear',*/
+            easing: 'linear',
             queue: false,
             done: function(){
                 bulletDom.remove();

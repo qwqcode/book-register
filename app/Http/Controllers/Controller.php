@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\Category;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
 class Controller extends BaseController
@@ -13,14 +14,14 @@ class Controller extends BaseController
      * 处理图书数据 for Getting API
      *
      * @param array $booksArr 原图书数据
-     * @return array 处理后的图书数据
+     * @return Collection 处理后的图书数据
      */
     protected function handleBooksForGetting(array $booksArr)
     {
-        if (empty($booksArr) || count($booksArr) < 1)
-            return [];
+        $data = new Collection();
         
-        $data = [];
+        if (empty($booksArr) || count($booksArr) < 1)
+            return $data;
         
         $numbering = function () use ($booksArr) {
             // 获取最大的 numbering
@@ -36,24 +37,24 @@ class Controller extends BaseController
         $numbering = $numbering();
         
         do {
-            $index = $numbering - 1;
-            
-            $data[$index] = [
+            $data->put($numbering, [
                 'numbering' => strval($numbering),
                 'name'      => '',
                 'press'     => '',
                 'remarks'   => '',
                 'user'      => '',
-            ];
+            ]);
             
             // 搜寻是否有当前 numbering 的图书数据
             foreach ($booksArr as $bookItem) {
                 if ($bookItem['numbering'] == $numbering) {
-                    $data[$index]['numbering'] = strval($numbering);
-                    $data[$index]['name'] = $bookItem['name'] ?? '';
-                    $data[$index]['press'] = $bookItem['press'] ?? '';
-                    $data[$index]['remarks'] = $bookItem['remarks'] ?? '';
-                    $data[$index]['user'] = $bookItem['user'] ?? '';
+                    $data->put($numbering, [
+                        'numbering' => strval($numbering),
+                        'name'      => $bookItem['name'] ?? '',
+                        'press'     => $bookItem['press'] ?? '',
+                        'remarks'   => $bookItem['remarks'] ?? '',
+                        'user'      => $bookItem['user'] ?? '',
+                    ]);
                     break;
                 }
             }
@@ -63,7 +64,7 @@ class Controller extends BaseController
         } while ($numbering > 0);
         
         // 数组顺序翻转
-        $data = array_reverse($data);
+        $data = $data->reverse();
         
         return $data;
     }
@@ -91,6 +92,16 @@ class Controller extends BaseController
     }
     
     /**
+     * 响应附加的 Header
+     * @var array
+     */
+    private $withHeaders = [
+        'X-Project-Link' => QWQ_PROJECT_LINK,
+        'X-Author-Link' => QWQ_AUTHOR_LINK,
+        'Access-Control-Allow-Origin' => '*'
+    ];
+    
+    /**
      * 响应 - 正确结果
      *
      * @param string $msg 正确信息
@@ -106,8 +117,9 @@ class Controller extends BaseController
             'data'    => $data
         ];
         
-        return response()->json($response)
-            ->header('Access-Control-Allow-Origin', '*');
+        return response()
+            ->json($response)
+            ->withHeaders($this->withHeaders);
     }
     
     /**
@@ -125,8 +137,9 @@ class Controller extends BaseController
             'msg'     => $msg,
             'data'    => $data
         ];
-        
-        return response()->json($response)
-            ->header('Access-Control-Allow-Origin', '*');
+    
+        return response()
+            ->json($response)
+            ->withHeaders($this->withHeaders);
     }
 }

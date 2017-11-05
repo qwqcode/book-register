@@ -1,4 +1,5 @@
-var WebSocket = require('ws');
+var ws = require('ws');
+var fs = require('fs');
 
 // 配置
 var conf = {
@@ -6,32 +7,32 @@ var conf = {
 };
 
 // 实例化
-var wss = new WebSocket.Server(conf);
+var wss = new ws.Server(conf);
 
 // Go it!
 console.log('>> Listening...');
 
 // 用户在线记录
-var users = [];
+var users = {};
 
 // 发送全局广播
 var broadcast = function (obj) {
     var jsonStr = JSON.stringify(obj);
     wss.clients.forEach(function each(client) {
-        if (client.readyState === WebSocket.OPEN)
+        if (client.readyState === ws.OPEN)
             client.send(jsonStr);
     });
 };
 
 // level: s, e, i, w
-var notify = function (msg, level) {
-    if (level === undefined)
-        level = 'i';
+var notify = function (msg, mode) {
+    if (mode === undefined)
+        mode = '2';
 
     return {
         type: 'notify',
         msg: msg,
-        level: level
+        mode: mode
     };
 };
 
@@ -47,6 +48,7 @@ wss.on('connection', function (ws, req) {
     console.log('Client Connected + 1');
 
     // 当前用户标识
+    var id = req.headers['sec-websocket-key'];
     var currentUser = '';
 
     // 接收消息事件
@@ -55,24 +57,47 @@ wss.on('connection', function (ws, req) {
         switch (data['type']) {
             case 'register':
                 currentUser = data['user'];
-                users.indexOf(currentUser) <= -1 ? users.push(currentUser) : null;
+                users[id] = currentUser;
                 // MSG
-                console.log(currentUser + ' 已上线');
-                broadcast(notify('成员 ' + currentUser + ' 已上线', 'i'));
+                console.log(currentUser + ' ['+ id +'] 已上线');
+                broadcast(notify('[新成员] ' + currentUser + ' 上线了', '2'));
                 break;
 
             case 'getOnline':
-				var onlineStr = users.join(', ');
+				var onlineStr = [];
+                (function () {
+                    for (var key in users) {
+                        if (users.hasOwnProperty(key))
+                            onlineStr.push(users[key]);
+                    }
+                })();
+                var userCount = Object.keys(users).length;
                 broadcast({
                     type: 'getOnline',
-                    online_total: users.length,
+                    online_total: userCount,
                     online_users: users,
-                    str: '目前在线 (' + users.length + ')：' + onlineStr
+                    str: '目前在线 (' + userCount + ')：' + onlineStr.join(', ')
                 });
                 break;
 
             case 'broadcastNotify':
-                broadcast(notify(currentUser  + ' 说：\n' + data['msg'], 'i'));
+                broadcast(notify('[' + currentUser  + '] ' + data['msg'], data['mode'] || '2'));
+                break;
+
+            case 'logFrontendError':
+                var msg = [
+                    'Message: ' + data.msg,
+                    'URL: ' + data.url,
+                    'Line: ' + data.lineNo,
+                    'Column: ' + data.columnNo,
+                    'Error object: ' + data.errorObj
+                ].join(' - ');
+
+                msg = '[' + new Date().toLocaleString() + '][' + currentUser + '] ' + msg;
+
+                fs.appendFile('storage/logs/frontend-err.log', msg + '\n', function (err) {
+                    console.log('用户：' + currentUser + ' 的前端发生了一个错误');
+                });
                 break;
 
             default:
@@ -83,8 +108,9 @@ wss.on('connection', function (ws, req) {
 
     // 关闭事件
     var onClose = function () {
-        var index = users.indexOf(currentUser);
-        index > -1 ? users.splice(index, 1) : null;
+        if (users.hasOwnProperty(id))
+            delete users[id];
+
         // MSG
         console.log(currentUser + ' 下线');
         broadcast(notify('成员 ' + currentUser + ' 下线了', 'w'));

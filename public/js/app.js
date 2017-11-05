@@ -1,54 +1,68 @@
 /* Zneiat/book-register */
+"use strict";
 $(document).ready(function () {
-    $.checkLocalTime();
-
     app.data.register();
     app.main.register();
     app.editor.register();
+    app.danmaku.register();
     app.socket.register();
 
     app.notify.info('程序初始化完毕');
     app.notify.setShowEnabled(true);
 
-    app.pageLoader.hide();
+    app.loadingLayer.hide();
 
     appHelp.init();
 });
 
-var app = {};
+var app = {
+    projectLink: 'https://github.com/Zneiat/book-register',
+    authorLink: 'https://github.com/Zneiat'
+};
 
-app.pageLoader = {
-    sel: '#pageLoaderLayer',
+/**
+ * Loading
+ */
+app.loadingLayer = {
+    _sel: '.loading-layer',
     show: function (text) {
-        text = text || '加载中...';
-        var dom = $(this.sel);
-        dom.find('.loading-text').html(text);
-        dom.show();
+        var loadingElem = $(this._sel);
+        loadingElem.find('.loading-layer-text').html(text || '加载中...');
+        loadingElem.show();
     },
     hide: function () {
-        var dom = $(this.sel);
-        dom.hide();
+        $(this._sel).hide();
     }
 };
 
+/**
+ * Data
+ */
 app.data = {
     register: function () {
-        this.user = window.localStorage ? localStorage.getItem('user') || null : null;
+        if (!window.localStorage) {
+            alert('不支持 localStorage 请更换浏览器！');
+            return;
+        }
+
+        this._user = localStorage.getItem('user');
     },
-    user: null,
+
+    _user: '',
     setUser: function (val) {
-        if (!val || typeof (val) !== 'string' || $.trim(val).length < 1) return;
+        if (!val || typeof val !== 'string' || $.trim(val).length < 1) return;
         val = $.trim(val);
-        this.user = val;
-        window.localStorage ? localStorage.setItem('user', val) : null;
+        this._user = val;
+        localStorage.setItem('user', val);
     },
     getUser: function () {
-        return this.user || '';
+        return this._user || '';
     },
     clearUser: function () {
-        this.user = null;
-        window.localStorage ? localStorage.removeItem('user') : null;
+        this._user = '';
+        localStorage.removeItem('user');
     },
+
     categoris: {},
     categoryHandle: function (categoryName, handle) {
         for (var i in this.categoris) {
@@ -68,285 +82,264 @@ app.data = {
                 }
             }
         });
+    },
+
+    uploadBooks: function () {
+        app.api.uploadCategory();
     }
 };
 
 /* Main */
 app.main = {
-    dom: $(),
-    wrap: $(),
-    loginDom: $(),
-    categoryListDom: $(),
-    categoryList: null,
+    _elem: $(),
+    _wrapElem: $(),
+
+    login: {},
+    categoryList: {},
 
     register: function () {
-        this.dom = $('.main');
-        this.wrap = $('.main-wrap');
-        this.loginDom = $('.main-login');
-        this.categoryListDom = $('.main-category-list-wrap');
+        this._elem = $('.main');
+        this._wrapElem = $('.main-wrap');
 
-        // Category List
-        this.categoryListInit(this.categoryListDom);
+        this.initLogin(this.login);
+        this.initCategoryList(this.categoryList);
 
         // Login Check
         if (!!app.data.getUser())
             this.toggleCategoryList();
 
-        // Login Form
-        this.loginDom.submit(function () {
-            var yourName = $(this).find('#yourName');
-            var yourNameVal = $.trim(yourName.val());
-            if (yourNameVal.length < 1) {
-                app.notify.warning('请填入你的真实姓名');
-                return false;
-            }
-            if (yourNameVal.length > 4) {
-                app.notify.warning('名字只允许最多 4 个字');
-                return false;
-            }
-
-            app.notify.info('欢迎使用 書記 Online');
-            app.main.toggleCategoryList(yourNameVal);
-
-            return false;
-        });
-
         this.show();
     },
 
-    toggleCategoryList: function (userName) {
-        if (!!userName)
-            app.data.setUser(userName);
-
-        this.dom.addClass('large-size');
-
-        // Update Category Data
-        this.categoryList.updateFromServer();
-    },
-
-    toggleLogin: function () {
-        this.loginDom.find('#yourName').val(app.data.getUser());
-        this.dom.removeClass('large-size');
-    },
-
     show: function () {
-        this.wrap.show();
+        this._wrapElem.show();
     },
 
     hide: function () {
-        this.wrap.hide();
+        this._wrapElem.hide();
     },
 
-    uploadBooks: function () {
-        app.api.uploadCategory();
+    toggleCategoryList: function (userName) {
+        if (!!userName) app.data.setUser(userName);
+        this._elem.addClass('large-size');
+        this.categoryList.refreshList();
     },
 
-    showRanking: function () {
-        app.main.categoryList.setLoading(true);
-        app.api.getRanking(function (data) {
-            app.main.categoryList.setLoading(false);
-            var bookRanking = data['book_ranking'];
-            var rankingDom = $(
-                '<div class="dialog-ranking">' +
-                '<div class="site-total"></div>' +
-                '<div class="book-ranking"></div>' +
-                '</div>'
-            );
-            rankingDom.find('.site-total').html('<i class="zmdi zmdi-cloud-outline-alt"></i> 全站目前共有 ' + data['site_category_total'] + ' 个类目，' + data['site_book_total'] + ' 本图书记录');
-            var bookRankingDom = rankingDom.find('.book-ranking');
-            for (var i in bookRanking) {
-                var item = bookRanking[i],
-                    number = Number(i) + 1;
-                var rankingItem = $(
-                    '<div class="book-ranking-item" data-number="' + number + '">' +
-                    '<span class="number"></span>' +
-                    '<span class="user-name"></span>' +
-                    '<span class="book-count"></span>' +
-                    '<span class="percentage"></span>' +
-                    '</div>'
-                );
-                rankingItem.find('.number').text(number);
-                rankingItem.find('.user-name').text(item['user_name'] || '无名英雄');
-                rankingItem.find('.book-count').text(item['book_count'] + ' 本书');
-                rankingItem.find('.percentage').text(item['percentage'] + '%');
-                rankingItem.appendTo(bookRankingDom);
-            }
-            app.dialog.build('战绩排名', rankingDom);
-        }, function () {
-            app.main.categoryList.setLoading(false);
-        });
-
+    toggleLogin: function () {
+        this._elem.removeClass('large-size');
+        this.login.setYourNameVal(app.data.getUser());
     }
 };
 
-/* Category > Selector Builder */
-app.main.categoryListInit = function (appendingDom) {
-    var obj = {};
+app.main.initLogin = function () {
+    var _login = this.login;
+    var _loginElem = $('.main-login');
+    var _loginFormElem = _loginElem.find('.main-login-form');
+    var _yourNameElem = _loginFormElem.find('#yourName');
 
-    var dom = $(
-        '<div class="category-list">' +
+    _loginFormElem.submit(function () {
+        var yourNameVal = $.trim(_yourNameElem.val());
 
-        '<div class="list-head">' +
-        '<span class="left-part">' +
-        '<div class="title">書記 Online</div>' +
-        '<div class="user">' +
-        '<a class="username" data-toggle="user-logout">' + $.htmlEncode(app.data.getUser() || '无名英雄') + '</a>' +
-        '<a class="book-count"></a>' +
-        '<a class="current-online">在线：加载中...</a>' +
-        '</div>' +
-        '</span>' +
-
-        '<span class="right-part">' +
-        '<span class="list-search">' +
-        '<input type="text" class="form-control" placeholder="搜索类目..." autocomplete="off" spellcheck="false">' +
-        '</span>' +
-        '<span class="list-actions">' +
-        '<a data-toggle="refresh-data"><i class="zmdi zmdi-refresh"></i> 刷新列表</a>' +
-        '<a data-toggle="upload-books"><i class="zmdi zmdi-cloud-upload"></i> 上传图书</a>' +
-        '<a data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建类目</a>' +
-        '<a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 数据导出</a>' +
-        '</span>' +
-        '</span>' +
-        '</div>' +
-
-        '<div class="list-body">' +
-        '<div class="list-content"></div>' +
-        '<div class="list-loading anim-fade-in" style="display: none;"><div class="page-loader-spinner"><svg viewBox="25 25 50 50"><circle cx="50" cy="50" r="20" fill="none" stroke-width="2" stroke-miterlimit="10"></circle></svg></div></div>' +
-        '</div>' +
-
-        '</div>'
-    );
-
-    var headDom = dom.find('.list-head');
-
-    // User Logout
-    headDom.find('[data-toggle="user-logout"]').click(function () {
-        app.dialog.build('改变身份', '确定要改变自己的身份？', ['确定', function () {
-            app.main.toggleLogin();
-            app.data.clearUser();
-        }], ['取消', null]);
-    });
-
-    // Show Ranking
-    headDom.find('.book-count').click(function () {
-        app.main.showRanking();
-    });
-
-    // Create Category Btn
-    headDom.find('[data-toggle="create-category"]').click(function () {
-        app.main.createCategoryDialog();
-    });
-
-    // Refresh Data Btn
-    headDom.find('[data-toggle="refresh-data"]').click(function () {
-        app.main.categoryList.updateFromServer();
-    });
-
-    // Upload Books
-    headDom.find('[data-toggle="upload-books"]').click(function () {
-        app.main.uploadBooks();
-    });
-
-    // Category Search
-    headDom.find('.list-search > input').bind('input propertychange', function() {
-        var value = $.trim($(this).val());
-        if (value.length > 0) {
-            var categoryData = [];
-            for (var i in app.data.categoris) {
-                var item = app.data.categoris[i];
-                if ($.trim(item['name']).toUpperCase().indexOf(value.toUpperCase()) >= 0) {
-                    categoryData[i] = item;
-                }
-            }
-            app.main.categoryList.update(categoryData);
-        } else {
-            app.main.categoryList.update();
+        if (yourNameVal.length < 1) {
+            app.notify.warning('请填入你的真实姓名');
+            return false;
         }
-    }).focus(function () {
-        $(this).select();
+        if (yourNameVal.length > 4) {
+            app.notify.warning('名字只允许最多 4 个字');
+            return false;
+        }
+
+        app.notify.info('欢迎使用 書記 Online');
+        app.main.toggleCategoryList(yourNameVal);
+
+        return false;
     });
 
-    // Current Online
-    var onlineUsersStr = '';
-    headDom.find('.current-online').click(function () {
-        if (onlineUsersStr.length <= 0)
-            return;
-
-        app.dialog.build('在线成员', onlineUsersStr);
-    });
-
-    obj.getDom = function () {
-        return dom;
+    _login.setYourNameVal = function (value) {
+        _yourNameElem.val(value);
     };
+};
 
-    obj.getHead = function () {
-        return headDom;
-    };
+app.main.initCategoryList = function (_categoryList) {
+    var _listElem = $('.main-category-list');
+    var _headElem = _listElem.find('.main-category-list-head');
+    var _listContentElem = _listElem.find('.main-category-list-content');
 
-    obj.setHeadOnline = function (num, str) {
-        headDom.find('.current-online').text('在线：' + num);
-        onlineUsersStr = str;
-    };
+    _categoryList.goToWork = function (categoryIndex) {
+        _categoryList.setLoading(true);
+        var category = app.data.categoris[categoryIndex];
+        app.api.getCategoryBooks(categoryIndex, function () {
+            // 刷新类目列表
+            _categoryList.refreshListFromObj();
+            _categoryList.setLoading(false);
 
-    obj.updateFromServer = function (onAfter) {
-        onAfter = onAfter || function () {};
-
-        obj.setLoading(true);
-
-        // 更新类目列表
-        app.api.getCategory(function () {
-            obj.update();
-            obj.setLoading(false);
-            onAfter();
+            // 打开工作
+            app.socket.broadcastNotify('已进入类目 ' + category['name'], 4);
+            app.editor.startWork(categoryIndex);
         }, function () {
-            obj.setLoading(false);
+            _categoryList.setLoading(false);
+            app.notify.error('无法打开该类目');
+        });
+    };
+
+    (function headPart() {
+        var onlineUsers = '';
+
+        // User Logout
+        _headElem.find('[data-toggle="user-logout"]').click(function () {
+            app.dialog.build('改变身份', '确定要改变自己的身份？', ['确定', function () {
+                app.main.toggleLogin();
+                app.data.clearUser();
+            }], ['取消', null]);
         });
 
-        // 更新用户信息
-        this.updateUserInfoFromServer();
-    };
+        // Show Ranking
+        _headElem.find('.book-count').click(function () {
+            app.main.showRanking();
+        });
 
-    obj.update = function (categoryData) {
-        var contentDom = dom.find('.list-content');
-        var categories = categoryData || app.data.categoris;
-        contentDom.html('');
-        var itemRender = function (index, item) {
-            var categoryName = $.htmlEncode(item['name'] || "未命名");
+        // Create Category Btn
+        _headElem.find('[data-toggle="create-category"]').click(function () {
+            app.main.createCategoryDialog();
+        });
 
-            var itemDom = $(
-                '<div class="item col-sm-6 col-md-3' + (item.isMine() ? ' is-mine' : '') + '' +
-                (String(item['remarks']).indexOf('已完成') >= 0 ? ' is-completed' : '') +
+        // Refresh Data Btn
+        _headElem.find('[data-toggle="refresh-data"]').click(function () {
+            _categoryList.refreshList();
+        });
+
+        // Upload Books
+        _headElem.find('[data-toggle="upload-books"]').click(function () {
+            app.data.uploadBooks();
+        });
+
+        // Category Search
+        _headElem.find('.list-search > input').bind('input propertychange', function() {
+            var value = $.trim($(this).val());
+            if (value.length > 0) {
+                var categoryData = [];
+                for (var i in app.data.categoris) {
+                    var item = app.data.categoris[i];
+                    if ($.trim(item['name']).toUpperCase().indexOf(value.toUpperCase()) >= 0) {
+                        categoryData[i] = item;
+                    }
+                }
+                _categoryList.refreshListFromObj(categoryData);
+            } else {
+                _categoryList.refreshListFromObj();
+            }
+        }).focus(function () {
+            $(this).select();
+        });
+
+        // Current Online
+        _headElem.find('.current-online').click(function () {
+            if (onlineUsers.length > 0)
+                app.dialog.build('在线成员', onlineUsers);
+        });
+
+        _categoryList.setHeadOnline = function (num, str) {
+            _headElem.find('.current-online').text('在线：' + num);
+            onlineUsers = str;
+        };
+    })();
+
+    (function ListPart() {
+        _categoryList.setLoading = function (isLoading) {
+            var el = _listElem.find('.main-category-list-loading');
+            isLoading ? el.show() : el.hide();
+        };
+
+        _categoryList.refreshList = function (onAfter) {
+            _categoryList.setLoading(true);
+
+            app.api.getCategory(function () {
+                _categoryList.refreshListFromObj();
+                _categoryList.setLoading(false);
+                !!onAfter ? onAfter() : null;
+            }, function () {
+                _categoryList.setLoading(false);
+            });
+
+            (function updateUserInfo() {
+                if (!app.data.getUser()) return;
+
+                _headElem.find('.user .username').text(app.data.getUser());
+
+                var bookCountElem = _headElem.find('.user .book-count');
+                bookCountElem.text('战绩：加载中...');
+                app.api.getUser(app.data.getUser(), function (data) {
+                    bookCountElem.text('战绩：' + data['book_total'] + ' 本书');
+                }, function () {
+                    bookCountElem.text('战绩：获取失败');
+                });
+            })();
+        };
+
+        _categoryList.refreshListFromObj = function (categoryData) {
+            var categories = categoryData || app.data.categoris;
+
+            _listContentElem.html('');
+
+            // 我负责的
+            for (var indexMine in categories) {
+                var itemMine = categories[indexMine];
+                if (!itemMine.isMine()) continue;
+                _categoryList.itemRender(indexMine, itemMine)
+                    .appendTo(_listContentElem);
+            }
+
+            // 非我负责的
+            for (var index in categories) {
+                var item = categories[index];
+                if (item.isMine()) continue;
+                _categoryList.itemRender(index, item)
+                    .appendTo(_listContentElem);
+            }
+
+            //_listContentElem.scrollTop(0); // 滚动归零
+        };
+
+        _categoryList.itemRender = function (index, category) {
+            var categoryName = $.htmlEncode(category['name'] || "未命名");
+
+            var itemElem = $(
+                '<div class="item col-sm-6 col-md-3' + (category.isMine() ? ' is-mine' : '') + '' +
+                (String(category['remarks']).indexOf('已完成') >= 0 ? ' is-completed' : '') +
                 '" data-category-index="' + index + '">' +
                 '<div class="item-inner">' +
+
                 '<div class="item-head">' +
-                '<span class="category-name">' +
-                categoryName +
-                '</span>' +
+                '<span class="category-name">' + categoryName + '</span>' +
                 '</div>' +
+
                 '<div class="item-meta">' +
-                '<a class="user"><i class="zmdi zmdi-account-circle"></i> ' + item['user'] + '</a>' +
-                '<a class="users"><i class="zmdi zmdi-mood"></i> ' + $.countObj(item['users']) + ' 人</a>' +
-                '<a class="book-count"><i class="zmdi zmdi-run"></i> ' + item['books_count'] + ' 本书</a>' +
+                '<a class="user"><i class="zmdi zmdi-account-circle"></i> ' + category['user'] + '</a>' +
+                '<a class="users"><i class="zmdi zmdi-mood"></i> ' + Object.keys(category['users']).length + ' 人</a>' +
+                '<a class="book-count"><i class="zmdi zmdi-run"></i> ' + category['books_count'] + ' 本书</a>' +
                 '</div>' +
+
                 '</div>' +
                 '</div>'
             );
-            itemDom.find('.item-head').click(function () {
-                obj.startWork(index);
+
+            itemElem.find('.item-head').click(function () {
+                _categoryList.goToWork(index);
             });
-            itemDom.find('.item-meta > a').click(function () {
+
+            itemElem.find('.item-meta > a').click(function showCategoryInfo() {
                 var content = $(
                     '<div class="dialog-category-users">' +
-                    '<div class="created">创建者：' + item['user'] + '</div>' +
-                    '<div class="created">总图书：' + item['books_count'] + ' 本</div>' +
-                    '<div class="workers">贡献者（' + $.countObj(item['users']) + '）：<span class="users-list"></span></div>' +
-                    '<div class="updated-at">最新更新：' + $.dateFormat(item['updated_at'] * 1000) + '（' + $.timeAgo(item['updated_at']) + '）</div>' +
-                    '<div class="updated-at">创建日期：' + $.dateFormat(item['created_at'] * 1000) + '（' + $.timeAgo(item['created_at']) + '）</div>' +
+                    '<div class="created">创建者：' + category['user'] + '</div>' +
+                    '<div class="created">总图书：' + category['books_count'] + ' 本</div>' +
+                    '<div class="workers">贡献者（' + Object.keys(category['users']).length + '）：<span class="users-list"></span></div>' +
+                    '<div class="updated-at">最新更新：' + $.dateFormat(category['updated_at'] * 1000) + '（' + $.timeAgo(category['updated_at']) + '）</div>' +
+                    '<div class="updated-at">创建日期：' + $.dateFormat(category['created_at'] * 1000) + '（' + $.timeAgo(category['created_at']) + '）</div>' +
                     '</div>'
                 );
 
-                for (var i in item['users']) {
-                    var user = item['users'][i];
+                for (var i in category['users']) {
+                    var user = category['users'][i];
                     var userName = $.trim(user['username']).length > 0 ? $.trim(user['username']) : '无名英雄';
                     $('<span class="user-item">' +
                         '<span class="username">' + userName + '</span>' +
@@ -354,89 +347,53 @@ app.main.categoryListInit = function (appendingDom) {
                         '<span class="percentage">' + user['percentage'] + '%</span>' +
                         '</span>').appendTo(content.find('.users-list'));
                 }
-                var dialog = app.dialog.build('类目 ' + categoryName, content);
+
+                app.dialog.build('类目 ' + categoryName, content);
             });
-            itemDom.appendTo(contentDom);
 
-            // 滚动归零
-            //contentDom.scrollTop(0);
+            return itemElem;
         };
+    })();
+};
 
-        // 我负责的
-        for (var indexMine in categories) {
-            var itemMine = categories[indexMine];
-            if (!itemMine.isMine()) continue;
-            itemRender(indexMine, itemMine);
+app.main.showRanking = function () {
+    app.main.categoryList.setLoading(true);
+    app.api.getRanking(function (data) {
+        app.main.categoryList.setLoading(false);
+        var bookRanking = data['book_ranking'];
+        var rankingElem = $(
+            '<div class="dialog-ranking">' +
+            '<div class="site-total"></div>' +
+            '<div class="book-ranking"></div>' +
+            '</div>'
+        );
+        rankingElem.find('.site-total').html('<i class="zmdi zmdi-cloud-outline-alt"></i> 全站目前共有 ' + data['site_category_total'] + ' 个类目，' + data['site_book_total'] + ' 本图书记录');
+        var bookRankingElem = rankingElem.find('.book-ranking');
+        for (var i in bookRanking) {
+            var item = bookRanking[i],
+                number = Number(i) + 1;
+            var rankingItem = $(
+                '<div class="book-ranking-item" data-number="' + number + '">' +
+                '<span class="number"></span>' +
+                '<span class="user-name"></span>' +
+                '<span class="book-count"></span>' +
+                '<span class="percentage"></span>' +
+                '</div>'
+            );
+            rankingItem.find('.number').text(number);
+            rankingItem.find('.user-name').text(item['user_name'] || '无名英雄');
+            rankingItem.find('.book-count').text(item['book_count'] + ' 本书');
+            rankingItem.find('.percentage').text(item['percentage'] + '%');
+            rankingItem.appendTo(bookRankingElem);
         }
-        // 非我负责的
-        for (var index in categories) {
-            var item = categories[index];
-            if (item.isMine()) continue;
-            itemRender(index, item);
-        }
-
-        return true;
-    };
-
-    obj.startWork = function (categoryDataIndex) {
-        var categoryData = app.data.categoris[categoryDataIndex];
-        if (!categoryData) {
-            app.notify.error('类目是不存在的，index=' + categoryDataIndex);
-            return;
-        }
-
-        if (!categoryData['name']) {
-            app.notify.error('不知名的类目...');
-            return;
-        }
-
-        obj.setLoading(true);
-        app.api.getCategoryBooks(categoryDataIndex, function () {
-            // 当图书数据下载完毕
-            obj.update();
-            obj.setLoading(false);
-
-            // 正式开始工作
-            app.editor.startWork(categoryDataIndex);
-        }, function () {
-            obj.setLoading(false);
-            app.notify.error('无法打开该类目');
-        });
-    };
-
-    obj.updateUserInfoFromServer = function () {
-        if (!app.data.getUser())
-            return;
-
-        headDom.find('.user .username').text(app.data.getUser());
-
-        var bookCountDom = headDom.find('.user .book-count');
-        bookCountDom.text('战绩：加载中...');
-        app.api.getUser(app.data.getUser(), function (data) {
-            bookCountDom.text('战绩：' + data['book_total'] + ' 本书');
-        }, function () {
-            bookCountDom.text('战绩：获取失败');
-        });
-    };
-
-    obj.setLoading = function (isLoading) {
-        if (typeof isLoading !== 'boolean')
-            return;
-
-        if (isLoading) {
-            this.getDom().find('.list-loading').show();
-        } else {
-            this.getDom().find('.list-loading').hide();
-        }
-    };
-
-    dom.appendTo(appendingDom);
-
-    this.categoryList = obj;
+        app.dialog.build('战绩排名', rankingElem);
+    }, function () {
+        app.main.categoryList.setLoading(false);
+    });
 };
 
 app.main.createCategoryDialog = function () {
-    var dom = $(
+    var el = $(
         '<div class="create-category-dialog-layer anim-fade-in">' +
         '<div class="create-category-dialog">' +
 
@@ -453,18 +410,18 @@ app.main.createCategoryDialog = function () {
         '</div>' +
         '</div>'
     );
-    dom.find('.dialog-close-btn').click(function () {
-        dom.remove();
+    el.find('.dialog-close-btn').click(function () {
+        el.remove();
     });
-    dom.find('.create-category-form').submit(function () {
-        var input = dom.find('#categoryName');
+    el.find('.create-category-form').submit(function () {
+        var input = el.find('#categoryName');
         var inputVal = $.trim(input.val());
         if (inputVal.length <= 0) { input.focus();return; }
         inputVal = inputVal.toUpperCase();
         app.dialog.build('创建新的类目', '请确认类目名 ' + $.htmlEncode(inputVal) + ' 准确无误', ['立刻创建', function () {
             app.main.categoryList.setLoading(true);
             app.api.categoryCreate(inputVal, function (data) {
-                app.main.categoryList.updateFromServer(function () {
+                app.main.categoryList.refreshList(function () {
                     var categoryName = data['categoryName'];
 
                     if (!!data['categoryExist']) {
@@ -483,605 +440,19 @@ app.main.createCategoryDialog = function () {
 
                 });
             }, function () {
-                app.main.categoryList.updateFromServer();
+                app.main.categoryList.refreshList();
             });
-            dom.remove();
+            el.remove();
         }], ['返回修改']);
     });
 
-    dom.appendTo('body');
-};
-
-/* Editor */
-app.editor = {
-    isWorkStarted: false,
-    currentCategoryIndex: null,
-    currentCategoryObj: null,
-    currentCategoryBooks: null,
-    getCurrentCategoryName: function () {
-        return !!this.currentCategoryObj ? this.currentCategoryObj['name'] || '' : '';
-    },
-    getLastNumbering: function () {
-        return !!this.currentCategoryBooks ? this.currentCategoryBooks.length : 0;
-    },
-    isSaved: false,
-    currentBookIndex: 0,
-    getLocalData: function () {
-        return JSON.parse(localStorage.getItem(this.localStorageKey) || '{}');
-    },
-    clearLocalData: function () {
-        return localStorage.removeItem(this.localStorageKey);
-    },
-    setLocalData: function (obj) {
-        window.localStorage ? localStorage.setItem(this.localStorageKey, JSON.stringify(obj)) : null;
-    },
-    getLocalDataBookTotal: function () {
-        var localData = this.getLocalData(),
-            localDataCount = 0;
-        for (var i in localData) {
-            localDataCount += !!localData[i] ? $.countObj(localData[i]) : 0;
-        }
-        return localDataCount;
-    },
-    localStorageKey: 'editor_local_data',
-
-    dom: $(),
-    wrapDom: $(),
-    inserterDom: $(),
-    inputDoms: {
-        name: $(),
-        press: $(),
-        remarks: $()
-    },
-    currentBookInfoDom: $(),
-    bookRedirectInputDom: $(),
-    preBookBtnDom: $(),
-    nxtBookBtnDom: $(),
-    bookListDom: $(),
-    bookListContentDom: $(),
-
-    toolBarDom: $(),
-
-    register: function () {
-        this.isWorkStarted = false;
-
-        this.dom = $('.editor');
-        this.wrapDom = $('.editor-wrap');
-
-        this.inserterDom = $('.editor-inserter');
-        this.inputDoms.name = this.inserterDom.find('[name="name"]');
-        this.inputDoms.press = this.inserterDom.find('[name="press"]');
-        this.inputDoms.remarks = this.inserterDom.find('[name="remarks"]');
-        this.currentBookInfoDom = this.inserterDom.find('.current-book-info');
-        this.preBookBtnDom = this.inserterDom.find('.pre-book-btn');
-        this.nxtBookBtnDom = this.inserterDom.find('.nxt-book-btn');
-
-        this.bookListDom = $('.editor-book-list');
-        this.bookListContentDom = this.bookListDom.find('.list-content');
-
-        this.initToolBar();
-    },
-    startWork: function (categoryDataIndex, startBookIndex) {
-        var category = app.data.categoris[categoryDataIndex];
-        if (!category) {
-            app.notify.error('类目是不存在的，index=' + categoryDataIndex);return;
-        }
-        var categoryName = category['name'];
-        if (!categoryName || typeof(categoryName) !== 'string' || $.trim(categoryName).length <= 0) {
-            app.notify.error('index=' + categoryDataIndex + ' 的类目，名称为 NULL');return;
-        }
-
-        this.isWorkStarted = true;
-
-        this.currentCategoryIndex = categoryDataIndex;
-        this.currentCategoryObj = category;
-        this.currentCategoryBooks = category['books'];
-        this.isSaved = false;
-        var bookCount = this.currentCategoryBooks.length;
-        this.currentBookIndex = (bookCount > 0) ? bookCount - 1 : 0;
-
-        // 同步本地的修改
-        this.updateToolBar();
-
-        app.editor.syncLocalModified();
-        this.refreshBookList();
-        this.initInserter();
-        this.bindKey();
-
-        app.main.hide();
-        this.wrapDom.show();
-
-        // 跳转编辑
-        if (typeof (startBookIndex) === 'number' && startBookIndex >= 0) {
-            app.editor.redirectBook(startBookIndex, false);
-        } else {
-            // 跳转编辑最后一本书
-            app.editor.redirectBook(this.getLastNumbering() - 1, false);
-        }
-    },
-    initToolBar: function () {
-        this.toolBarDom = $('.editor-tool-bar');
-        this.toolBarDom.find('[data-toggle="exit"]').click(function () {
-            app.editor.exit();
-        });
-        this.toolBarDom.find('[data-toggle="updateBooks"]').click(function () {
-            app.editor.updateBooksFromServer();
-        });
-        this.toolBarDom.find('[data-toggle="upload"]').click(function () {
-            app.main.uploadBooks();
-        });
-    },
-    updateToolBar: function () {
-        this.toolBarDom.find('.local-data-count').text(this.getLocalDataBookTotal());
-    },
-    initInserter: function () {
-        if (this.getLastNumbering() <= 0) // 如果一本书都没有
-            this.addNewBook();
-
-        // 图书焦点控制按钮
-        this.preBookBtnDom.click(function () {
-            app.editor.preBook();
-        });
-        this.inserterDom.submit(function () {
-            app.editor.nxtBook();
-        });
-
-        // 快速跳转功能
-        this.bookRedirectInputDom = this.currentBookInfoDom.find('.numbering');
-        var bookRedirectInputDom = this.bookRedirectInputDom;
-        var bookRedirectBlur = function () {
-            var val = bookRedirectInputDom.val();
-            if (!isNaN(val)) {
-                app.editor.redirectBook((Number(val) >= 1) ? (Number(val) - 1) : 0);
-            } else {
-                bookRedirectInputDom.val(app.editor.currentBookIndex + 1);
-            }
-        };
-        bookRedirectInputDom.focus(function () {
-            bookRedirectInputDom.select();
-        }).blur(function () {
-            bookRedirectBlur();
-        }).bind('keydown.editor_redirect_book', function(e) {
-            if (e.which === 13) {
-                bookRedirectBlur();
-                e.preventDefault();
-            }
-        });
-
-        // 自动填充
-        this.enableInputAutoComplete(this.inputDoms.name);
-        this.enableInputAutoComplete(this.inputDoms.press);
-        this.enableInputAutoComplete(this.inputDoms.remarks);
-    },
-    uninitInserter: function () {
-        this.clearInputs();
-        this.preBookBtnDom.unbind('click');
-        this.inserterDom.unbind('submit');
-        this.currentBookInfoDom.find('.numbering')
-            .unbind('onfocus')
-            .unbind('onblur');
-        this.bookRedirectInputDom = $();
-    },
-    refreshInserter: function () {
-        var bookIndex = this.currentBookIndex;
-        var bookNumbering = bookIndex + 1;
-        this.currentBookInfoDom.find('.category-name')
-            .text(this.getCurrentCategoryName());
-        this.currentBookInfoDom.find('.numbering')
-            .val((bookNumbering));
-        this.clearInputs();
-        var book = this.currentCategoryBooks[bookIndex];
-        if (!!book) {
-            var nameVal = !!book.name ? book.name : '',
-                pressVal = !!book.press ? book.press : '',
-                remarksVal = !!book.remarks ? book.remarks : '';
-            this.setInputsVal(nameVal, pressVal, remarksVal);
-        } else {
-            this.setInputsVal('', '', '');
-        }
-        this.inputDoms.name.focus();
-        // BookListItem Focus
-        this.bookListContentDom.find('.edit-focused').removeClass('edit-focused');
-        var itemDom = this.getBookListItemDom(bookNumbering);
-        itemDom.addClass('edit-focused');
-        // BookList Scroll
-        var scrollTo = bookNumbering < this.getLastNumbering() ? bookNumbering + 4 : bookNumbering;
-        this.scrollToBookListItem(scrollTo);
-    },
-    preBook: function () {
-        if (this.currentBookIndex <= 0) {
-            app.notify.info('没有上一本书了...');
-            return;
-        }
-
-        this.redirectBook(this.currentBookIndex - 1);
-    },
-    nxtBook: function () {
-        /*if (this.currentBookIndex >= this.getLastNumbering() - 1) {
-            app.notify.info('没有下一本书了...');
-            return;
-        } // 怎么可能没有？不存在的！！无限！！ */
-
-        this.redirectBook(this.currentBookIndex + 1);
-    },
-    setInputsVal: function (name, press, remarks) {
-        this.inputDoms.name.val(name || '');
-        this.inputDoms.press.val(press || '');
-        this.inputDoms.remarks.val(remarks || '');
-    },
-    clearInputs: function () {
-        this.inputDoms.name.val('');
-        this.inputDoms.press.val('');
-        this.inputDoms.remarks.val('');
-    },
-    enableInputAutoComplete: function (inputDom) {
-        var parentDom = this.inserterDom;
-
-        var inputKey = inputDom.attr('name');
-        var books = app.editor.currentCategoryBooks;
-
-        var remove = function () {
-            parentDom.find('.input-auto-complete-panel').remove();
-            inputDom.unbind('keydown.editor_input_auto_complete');
-        };
-        var searchVal = function () {
-            remove();
-
-            var val = $.trim(inputDom.val());
-            if (val.length <= 0) return;
-
-            var group = [];
-            for (var i in books) {
-                var itemVal = $.trim(books[i][inputKey]);
-                if (itemVal.indexOf(val) > -1 && group.indexOf(itemVal) <= -1) {
-                    group.push(itemVal);
-                }
-            }
-
-            if (group.length <= 0 || (group.length === 1 && group[0] === val))
-                return;
-
-            var panelDom = $('<div class="input-auto-complete-panel">' +
-                '<div class="panel-options"></div>' +
-                '</div>');
-
-            var inputPos = $.getPosition(inputDom);
-            panelDom.css('left', inputPos['left'] + 'px')
-                .css('top', inputPos['bottom'] + 'px')
-                .css('width', inputPos['width'] + 'px');
-
-            panelDom.on('mousedown', function(event) {
-                event.preventDefault();
-            });
-
-            var optionsDom = panelDom.find('.panel-options');
-            for (var indexGroup in group.reverse()) {
-                var optionText = group[indexGroup];
-                $('<div class="panel-option-item" data-key="' + indexGroup + '"></div>')
-                    .data('content', optionText)
-                    .html(optionText.replace(val, function(matched) {
-                        return '<span class="highlight">' + $.htmlEncode(matched) + '</span>'
-                    }))
-                    .click(function () {
-                        inputDom.val($(this).data('content'));
-                        remove();
-                    })
-                    .appendTo(optionsDom);
-            }
-
-            panelDom.appendTo(parentDom);
-
-            // 键盘控制
-            var currentFocusedIndex = -1;
-            var clearFocused = function () {
-                optionsDom.find('.focused').removeClass('focused');
-            };
-            var setFocused = function () {
-                clearFocused();
-                var optionDom = optionsDom.find('[data-key="' + currentFocusedIndex + '"]');
-                optionDom.addClass('focused');
-                if (!!optionDom.offset())
-                    panelDom.scrollTop(optionDom.offset().top - optionsDom.offset().top);
-            };
-            inputDom.bind('keydown.editor_input_auto_complete', function(e) {
-                switch(e.which) {
-                    case 13: // enter
-                        if (currentFocusedIndex <= -1)
-                            return; // allow raw enter
-
-                        optionsDom.find('.focused').click();
-                        break;
-                    case 38: // up
-                        if (currentFocusedIndex <= -1)
-                            break;
-
-                        currentFocusedIndex--;
-                        setFocused();
-                        break;
-                    case 40: // down
-                        if (currentFocusedIndex >= group.length - 1)
-                            break;
-
-                        currentFocusedIndex++;
-                        setFocused();
-                        break;
-
-                    default: return;
-                }
-                e.preventDefault();
-            });
-        };
-        inputDom.bind('input propertychange', function () {
-            setTimeout(function () {
-                searchVal();
-            }, 20);
-        });
-        inputDom.focus(function () {
-            setTimeout(function () {
-                searchVal();
-            }, 20);
-        });
-        inputDom.blur(function () {
-            remove();
-        });
-    },
-    addNewBooksFilling: function (lastNumbering) {
-        // 补充数据
-        if (lastNumbering <= this.getLastNumbering())
-            return;
-
-        for (var newBookNumbering = this.getLastNumbering() + 1; newBookNumbering <= lastNumbering; newBookNumbering++) {
-            this.addNewBook();
-        }
-    },
-    addNewBook: function () {
-        var newBookNumbering = this.getLastNumbering() + 1;
-        var length = this.currentCategoryBooks.push({numbering: newBookNumbering.toString(), name: '', press: '', remarks: ''});
-        var itemDom = this.bookListItemRender(this.currentCategoryBooks[length - 1]);
-        itemDom.prependTo(this.bookListContentDom);
-    },
-    saveCurrentBook: function () {
-        var categoryName = this.getCurrentCategoryName();
-        var rawBookData = this.currentCategoryBooks[this.currentBookIndex];
-        if (!rawBookData) {
-            app.notify.error('当前图书 index=' + this.currentBookIndex + ' 原始数据不存在，无法保存');
-            return;
-        }
-
-        var bookNumbring = rawBookData.numbering;
-        var inputName = $.trim(this.inputDoms.name.val());
-        var inputPress = $.trim(this.inputDoms.press.val());
-        var inputRemarks = $.trim(this.inputDoms.remarks.val());
-
-        // 是否已修改
-        var isNameModified = inputName !== rawBookData['name'],
-            isPressModified = inputPress !== rawBookData['press'],
-            isRemarksModified = inputRemarks !== rawBookData['remarks'];
-
-        // 是否输入为空
-        var isNameNull = inputName.length <= 0,
-            isPressNull = inputPress.length <= 0,
-            isRemarksNull = inputRemarks.length <= 0,
-            isAllNull = isNameNull && isPressNull && isRemarksNull;
-
-        if (!isNameModified && !isPressModified && !isRemarksModified)
-            return;
-
-        // 获取 "修改记录" 对象
-        var localData = this.getLocalData();
-        if (!localData[categoryName])
-            localData[categoryName] = {};
-        if (!localData[categoryName][bookNumbring])
-            localData[categoryName][bookNumbring] = {};
-
-        // "修改记录" 对象内容修改
-        var values = localData[categoryName][bookNumbring];
-        if (!!values) {
-            if (isNameModified && !isNameNull) values.name = inputName;
-            if (isNameModified && isNameNull) !!values.name ? delete values.name : null;
-
-            if (isPressModified && !isPressNull) values.press = inputPress;
-            if (isPressModified && isPressNull) !!values.press ? delete values.press : null;
-
-            if (isRemarksModified && !isRemarksNull) values.remarks = inputRemarks;
-            if (isRemarksModified && isRemarksNull) !!values.remarks ? delete values.remarks : null;
-
-            if (!values.name && !values.press && !values.remarks) {
-                delete localData[categoryName][bookNumbring];
-            }
-        }
-
-        // 空对象清理
-        if (!!localData[categoryName] && $.isEmptyObject(localData[categoryName])) {
-            delete localData[categoryName];
-        }
-
-        // 修改源数据
-        rawBookData.name = inputName;
-        rawBookData.press = inputPress;
-        rawBookData.remarks = inputRemarks;
-
-        // 保存到浏览器
-        this.setLocalData(localData);
-
-        // 更新工具条
-        this.updateToolBar();
-
-        // 更新 BookList 中单个 item
-        this.bookListItemUpdate(bookNumbring);
-    },
-    isInputsFocused: function () {
-        var isFocused = this.inputDoms.name.is(':focus'),
-            isFocused2 = this.inputDoms.press.is(':focus'),
-            isFocused3 = this.inputDoms.remarks.is(':focus');
-
-        return isFocused || isFocused2 || isFocused3;
-    },
-    bindKey: function() {
-        $(document).bind('keydown.editor_keys', function(e) {
-            if (e.ctrlKey && e.keyCode === 71) {
-                // Ctrl + G
-                app.editor.bookRedirectInputDom.focus();
-                e.preventDefault();
-            }
-        });
-    },
-    unbindKey: function() {
-        $(document).unbind('keydown.editor_keys');
-    },
-    redirectBook: function (bookIndex, saveCurrentBook) {
-        if (isNaN(bookIndex) || bookIndex < 0)
-            return;
-
-        // 在跳转之前 保存当前图书
-        if (saveCurrentBook === undefined)
-            saveCurrentBook = true;
-        if (typeof(saveCurrentBook) === 'boolean' && saveCurrentBook)
-            this.saveCurrentBook();
-
-        bookIndex = Number(bookIndex);
-        var bookNumbering = bookIndex + 1;
-
-        // 补充数据
-        this.addNewBooksFilling(bookNumbering);
-
-        this.currentBookIndex = bookIndex;
-        this.refreshInserter();
-    },
-    refreshBookList: function () {
-        var dom = this.bookListContentDom;
-        dom.html('');
-
-        for (var i = this.currentCategoryBooks.length - 1; i >= 0; i--) {
-            this.bookListItemRender(this.currentCategoryBooks[i]).appendTo(dom);
-        }
-
-        dom.unbind('click.editor_book_list');
-        dom.bind('click.editor_book_list', function (e) {
-            var dom = $(e.target);
-            if (dom.is('.numbering') && !!dom.closest('.list-item').length) {
-                var numbering = Number(dom.closest('.list-item').attr('data-numbering'));
-                app.editor.redirectBook(numbering - 1);
-            }
-        });
-    },
-    bookListItemRender: function (item) {
-        var categoryName = this.getCurrentCategoryName();
-
-        var numbering = item['numbering'],
-            numberingFull = app.editor.getCurrentCategoryName() + ' ' + numbering,
-            bookName = item['name'] || '',
-            bookPress = item['press'] || '',
-            bookRemarks = item['remarks'] || '';
-
-        var itemDom = $(
-            '<div class="list-item" data-numbering="' + numbering + '">' +
-            '<span class="numbering"></span>' +
-            '<span class="book-name"></span>' +
-            '<span class="book-press"></span>' +
-            '<span class="book-remarks"></span>' +
-            '</div>'
-        );
-
-        itemDom.find('.numbering').text(numberingFull);
-        itemDom.find('.book-name').text(bookName);
-        itemDom.find('.book-press').text(bookPress);
-        itemDom.find('.book-remarks').text(bookRemarks);
-
-        var localData = this.getLocalData();
-        var bookModifieds = localData[categoryName];
-        if (!!bookModifieds && !!bookModifieds[numbering]) {
-            itemDom.addClass('is-modified');
-        }
-
-        return itemDom;
-    },
-    bookListItemUpdate: function (numbering) {
-        if (numbering > this.currentCategoryBooks.length) {
-            app.notify.error('bookListItemUpdate() 错误：Numbering 超出 currentCategoryBooks 长度');
-            return;
-        }
-
-        var itemDom = this.getBookListItemDom(numbering);
-        var book = this.currentCategoryBooks[numbering - 1];
-
-        itemDom.replaceWith(this.bookListItemRender(book));
-    },
-    getBookListItemDom: function (numbering) {
-        return this.bookListContentDom.find('[data-numbering=' + numbering + ']');
-    },
-    scrollToBookListItem: function (numbering) {
-        var itemDom = this.getBookListItemDom(numbering <= this.getLastNumbering() ? numbering : this.getLastNumbering());
-        if (!itemDom || itemDom.length <= 0) return;
-        var scrollTop = (itemDom.offset().top - app.editor.bookListContentDom.offset().top);
-        this.bookListDom.stop(true).animate({scrollTop: scrollTop}, 150);
-        // this.bookListDom.stop(true).scrollTop(scrollTop);
-    },
-    updateBooksFromServer: function() {
-        var categoryIndex = this.currentCategoryIndex;
-        var currentEditingBookIndex = this.currentBookIndex;
-        app.pageLoader.show('正在更新图书数据');
-        app.api.getCategoryBooks(categoryIndex, function () {
-            app.pageLoader.hide();
-            app.editor.exit();
-            app.editor.startWork(categoryIndex, currentEditingBookIndex);
-            app.notify.success('更新完毕');
-        }, function () {
-            app.pageLoader.hide();
-            app.notify.error('更新失败');
-        });
-    },
-    syncLocalModified: function () {
-        var categoryName = this.getCurrentCategoryName();
-        var localData = this.getLocalData();
-        var bookModifieds = localData[categoryName];
-        if (!bookModifieds)
-            return;
-
-        var lastNumbering = (function () {
-            var max = 0;
-            for (var numbering in bookModifieds) {
-                numbering = Number(numbering);
-                if (numbering > max) max = numbering;
-            }
-            return max;
-        })();
-
-        if (lastNumbering <= 0)
-            return;
-
-        // 补充数据
-        this.addNewBooksFilling(lastNumbering);
-
-        for (var numbering in bookModifieds) {
-            for (var key in bookModifieds[numbering]) {
-                this.currentCategoryBooks[numbering - 1][key] = bookModifieds[numbering][key];
-            }
-        }
-    },
-    exit: function () {
-        this.saveCurrentBook(); // 保存当前修改图书
-
-        this.wrapDom.hide();
-        app.main.show();
-
-        this.uninitInserter();
-        this.unbindKey();
-
-        this.isWorkStarted = false;
-
-        this.currentCategoryIndex = null;
-        this.currentCategoryObj = null;
-        this.currentCategoryBooks = null;
-        this.isSaved = false;
-        this.currentBookIndex = 0;
-    }
+    el.appendTo('body');
 };
 
 /* Api */
 app.api = {
     responseHandle: function (responseData) {
-        if (!responseData || typeof (responseData) !== 'object' || $.isEmptyObject(responseData)) {
+        if (!responseData || typeof responseData !== 'object' || $.isEmptyObject(responseData)) {
             app.notify.error('服务器响应数据格式错误');
             return;
         }
@@ -1227,18 +598,13 @@ app.api = {
     },
 
     uploadCategory: function () {
-        if (app.editor.isWorkStarted) {
-            // 保存当前编辑
-            app.editor.saveCurrentBook();
-        }
-
-        var localData = app.editor.getLocalData();
+        var localData = app.editor.local.getAll();
         if (!localData || $.isEmptyObject(localData)) {
             app.notify.info('图书没有任何改动，无需上传');
             return;
         }
 
-        app.pageLoader.show('正在上传数据<br/>请勿关闭浏览器');
+        app.loadingLayer.show('正在上传数据<br/>请勿关闭浏览器');
 
         var json = JSON.stringify(localData);
 
@@ -1247,15 +613,14 @@ app.api = {
                 'user': app.data.getUser(),
                 'books': json
             }, success: function (data) {
-                app.pageLoader.hide();
+                app.loadingLayer.hide();
                 var resp = app.api.responseHandle(data);
                 if (resp.checkMakeNotify()) {
                     // 数据修改 清空
-                    app.editor.setLocalData({});
+                    app.editor.local.setAll({});
                 }
-                app.editor.updateToolBar();
             }, error: function () {
-                app.pageLoader.hide();
+                app.loadingLayer.hide();
                 app.notify.error('网络错误，图书数据无法上传');
             }
         });
@@ -1301,6 +666,8 @@ app.socket = {
             checker();
             app.socket.getOnline();
         }, 4000);
+
+        this.initGlobalErrorListener();
     },
     enableNotify: true,
     tryConnect: function () {
@@ -1324,7 +691,7 @@ app.socket = {
                     if (!app.socket.enableNotify)
                         return;
                     // app.notify.show(data['msg'], data['level']);
-                    app.danmaku.show(data['msg']);
+                    app.danmaku.show(data['msg'], data['mode']);
                     break;
                 case 'getOnline':
                     app.main.categoryList.setHeadOnline(data['online_total'], data['str']);
@@ -1337,65 +704,87 @@ app.socket = {
             app.socket.debugLog('远程服务器已断开');
         };
     },
-    sendData: function (type, data) {
-        if (typeof (type) !== 'string' || typeof (data) !== 'object') {
+    sendData: function (type, obj) {
+        if (this.webSocket === null || this.webSocket.readyState !== 1)
+            return;
+
+        if (typeof type !== 'string' || typeof obj !== 'object') {
             this.log('将要发送的数据类型有误');
             return;
         }
 
-        if (this.webSocket === null || this.webSocket.readyState !== 1)
-            return;
+        obj.type = type;
 
-        data.type = type;
-        this.webSocket.send(JSON.stringify(data));
+        var jsonStr = JSON.stringify(obj);
+        this.webSocket.send(jsonStr);
+        // this.debugLog('发送数据： \n' + jsonStr)
     },
     getOnline: function () {
         this.sendData('getOnline', {});
         return true;
     },
-    broadcastNotify: function (msg) {
-        this.sendData('broadcastNotify', {'msg': msg});
+    broadcastNotify: function (msg, mode) {
+        this.sendData('broadcastNotify', {'msg': msg, 'mode': mode});
         return true;
     },
     debugLog: function (msg) {
         console.log('[app.socket] ' + msg);
+    },
+    // 全局程序错误监听
+    initGlobalErrorListener: function () {
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            app.socket.sendData('logFrontendError', {
+                msg: msg,
+                url: url,
+                lineNo: lineNo,
+                columnNo: columnNo,
+                errorObj: JSON.stringify(error)
+            });
+            return false;
+        };
     }
 };
 
 /*
-transform: translateX(-910.301px) translateY(0px) translateZ(0px);
+    transform: translateX(-910.301px) translateY(0px) translateZ(0px);
     transition: -webkit-transform 0s linear;
  */
 app.danmaku = {
-    show: function (message) {
-        var wrapDom = $('.danmaku-wrap');
-        if (wrapDom.length === 0)
-            wrapDom = $('<div class="danmaku-wrap" />').appendTo('body');
-
-        var bulletDom = $('<div class="danmaku-item"><p class="danmaku-message"></p></div>');
-        bulletDom.find('.danmaku-message').html($.htmlEncode(message));
-        bulletDom.prependTo(wrapDom);
-
-        var bottom = Math.floor(Math.random() * $(document.body).height() + 40);
-        bulletDom.css('bottom', bottom + 'px');
-        bulletDom.animate({0: $(document.body).width() + bulletDom.width()}, {
-            duration: 8000,
-            step: function(now, fx) {
-                $(this).css('transform', 'translateX(-' + now + 'px) translateY(0px) translateZ(0px)');
-            },
-            easing: 'linear',
-            queue: false,
-            done: function(){
-                bulletDom.remove();
-            }
-        });
+    register: function () {
+        // Comment Manager
+        var elem = $('<div class="danmaku-layer-wrap"><div class="danmaku-layer"></div></div>').appendTo('body');
+        var cm = new CommentManager(elem.find('.danmaku-layer').get(0));
+        cm.init();
+        cm.start(); // 启用弹幕播放
+        window.CM = cm;
+    },
+    show: function (message, mode) {
+        mode = Number(mode);
+        if (mode === 4) {
+            CM.send({
+                "mode": 4,
+                "text": message,
+                "stime":0,
+                "size":25,
+                "color":0x2196F3
+            })
+        } else {
+            CM.send({
+                mode: mode,
+                text: message,
+                stime: 0,
+                size: 25,
+                color: 0xffffff,
+                dur: 8000
+            });
+        }
     }
 };
 
 app.notify = {
     showEnabled: false,
     setShowEnabled: function (showEnabled) {
-        if (showEnabled === undefined || typeof(showEnabled) !== 'boolean')
+        if (showEnabled === undefined || typeof showEnabled !== 'boolean')
             return false;
 
         this.showEnabled = showEnabled;
@@ -1422,23 +811,23 @@ app.notify = {
 
         timeout = (timeout !== undefined && typeof timeout === 'number') ? timeout : 4000;
 
-        var layerDom = $('.notify-layer');
-        if (layerDom.length === 0)
-            layerDom = $('<div class="notify-layer" />').appendTo('body');
+        var layerElem = $('.notify-layer');
+        if (layerElem.length === 0)
+            layerElem = $('<div class="notify-layer" />').appendTo('body');
 
-        var notifyDom = $('<div class="notify-item anim-fade-in ' + (!!level ? 'type-' + level : '') + '"><p class="notify-content"></p></div>');
-        notifyDom.find('.notify-content').html($.htmlEncode(message).replace('\n', '<br/>'));
-        notifyDom.prependTo(layerDom);
+        var notifyElem = $('<div class="notify-item anim-fade-in ' + (!!level ? 'type-' + level : '') + '"><p class="notify-content"></p></div>');
+        notifyElem.find('.notify-content').html($.htmlEncode(message).replace('\n', '<br/>'));
+        notifyElem.prependTo(layerElem);
 
         var notifyRemove = function () {
-            notifyDom.addClass('anim-fade-out');
+            notifyElem.addClass('anim-fade-out');
             setTimeout(function () {
-                notifyDom.remove();
+                notifyElem.remove();
             }, 200);
         };
 
         var autoOut = true;
-        notifyDom.click(function () {
+        notifyElem.click(function () {
             notifyRemove();
             autoOut = false;
         });
@@ -1461,21 +850,22 @@ app.dialog = {
         if ($(layerSel).length !== 0)
             $(layerSel).remove();
 
-        var dialogLayerDom = $('<div class="dialog-layer anim-fade-in" />').appendTo('body');
+        var dialogLayerElem = $('<div class="dialog-layer anim-fade-in" />').appendTo('body');
         var dialogLayerHide = function () {
-            dialogLayerDom.addClass('anim-fade-out');
+            dialogLayerElem.addClass('anim-fade-out');
             setTimeout(function () {
-                dialogLayerDom.hide();
+                dialogLayerElem.hide();
             }, 200);
         };
 
-        var dialogDom = $('<div class="dialog-inner"><div class="dialog-title">'+title+'</div>\n<div class="dialog-content"></div></div>').appendTo(dialogLayerDom);
-        dialogDom.find('.dialog-content').append(content);
+        var dialogElem = $('<div class="dialog-inner"><div class="dialog-title">'+title+'</div>\n<div class="dialog-content"></div></div>')
+            .appendTo(dialogLayerElem);
+        dialogElem.find('.dialog-content').append(content);
 
         // 底部按钮
         if (!!yesBtn || !!cancelBtn) {
-            var dialogBottomDom = $('<div class="dialog-bottom"></div>')
-                .appendTo(dialogDom);
+            var dialogBottomElem = $('<div class="dialog-bottom"></div>')
+                .appendTo(dialogElem);
 
             // 确定按钮
             if (!!yesBtn) {
@@ -1485,7 +875,7 @@ app.dialog = {
                 $('<a class="dialog-btn yes-btn">' + yesBtnText + '</a>').click(function () {
                     dialogLayerHide();
                     yesOnClick();
-                }).appendTo(dialogBottomDom);
+                }).appendTo(dialogBottomElem);
             }
 
             // 取消按钮
@@ -1496,17 +886,17 @@ app.dialog = {
                 $('<a class="dialog-btn cancel-btn">' + cancelBtnText + '</a>').click(function () {
                     dialogLayerHide();
                     cancelOnClick();
-                }).appendTo(dialogBottomDom);
+                }).appendTo(dialogBottomElem);
             }
         } else {
-            $('<a class="right-btn"><i class="zmdi zmdi-close"></i></a>').appendTo($(dialogDom).find('.dialog-title')).click(function () {
+            $('<a class="right-btn"><i class="zmdi zmdi-close"></i></a>').appendTo($(dialogElem).find('.dialog-title')).click(function () {
                 dialogLayerHide();
             });
         }
 
         var obj = {};
-        obj.getDom = function () {
-            return dialogDom;
+        obj.getElem = function () {
+            return dialogElem;
         };
 
         return obj;
@@ -1562,30 +952,6 @@ $.extend({
             return s + " 天前";
         }
     },
-    checkLocalTime: function () {
-        /*$.ajax({
-            url: '/getTime', beforeSend: function () {
-
-            }, success: function (data) {
-                if (!!data['success']) {
-                    var serverTime = data['data']['time'];
-                    var serverTimeFormat = data['data']['time_format'];
-                    // 获取 js 时间戳
-                    var time = new Date().getTime();
-                    // 去掉 js 时间戳后三位，与 php 时间戳保持一致
-                    time = parseInt((time - serverTime * 1000) / 1000);
-                    // 若时差超过1小时
-                    if (Math.floor(time / 60 / 60) >= 1 || Math.floor(time / 60 / 60) <= -1) {
-                        app.dialog.build('警告', '当前本地系统时间快了 ' + Math.floor(time / 60 / 60) + ' 小时<br/>为了避免发生错误，请调整为 ' + serverTimeFormat);
-                    }
-                } else {
-                    app.notify.warning('服务器当前时间戳获取失败')
-                }
-            }, error: function () {
-                app.notify.warning('网络错误，服务器当前时间戳获取失败')
-            }
-        });*/
-    },
     htmlEncode: function (value) {
         var div = document.createElement('div');
         div.appendChild(document.createTextNode(value));
@@ -1595,19 +961,6 @@ $.extend({
         var div = document.createElement('div');
         div.innerHTML = value;
         return div.innerText || div.textContent;
-    },
-    countObj: function (o){
-        var t = typeof o;
-        if(t === 'string'){
-            return o.length;
-        }else if(t === 'object'){
-            var n = 0;
-            for(var i in o){
-                n++;
-            }
-            return n;
-        }
-        return false;
     },
     getPosition: function ($element) {
         var el = $element[0];
@@ -1626,21 +979,5 @@ $.extend({
         var outerDims = isBody ? {width: $(window).width(), height: $(window).height()} : null;
 
         return $.extend({}, elRect, scroll, outerDims, elOffset);
-    },
-    sprintf: function (str) {
-        var args = arguments,
-            flag = true,
-            i = 1;
-
-        str = str.replace(/%s/g, function () {
-            var arg = args[i++];
-
-            if (typeof arg === 'undefined') {
-                flag = false;
-                return '';
-            }
-            return arg;
-        });
-        return flag ? str : '';
     }
 });

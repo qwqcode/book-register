@@ -218,6 +218,8 @@ class ApiController extends Controller
         
         // 导入多类图书
         foreach ($books as $categoryName => $arr) {
+            if (empty($arr)) continue;
+            
             try {
                 $category = $this->tableCategory()->where([
                     'name' => $categoryName,

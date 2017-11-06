@@ -1,6 +1,10 @@
 /* Zneiat/book-register */
 "use strict";
+
 $(document).ready(function () {
+    if (!app.checkRequirements())
+        return;
+
     app.data.register();
     app.main.register();
     app.editor.register();
@@ -16,22 +20,37 @@ $(document).ready(function () {
 });
 
 var app = {
-    projectLink: 'https://github.com/Zneiat/book-register',
-    authorLink: 'https://github.com/Zneiat'
-};
+    PROJECT_LINK: 'https://github.com/Zneiat/book-register',
+    AUTHOR_LINK: 'https://github.com/Zneiat',
 
-/**
- * Loading
- */
-app.loadingLayer = {
-    _sel: '.loading-layer',
-    show: function (text) {
-        var loadingElem = $(this._sel);
-        loadingElem.find('.loading-layer-text').html(text || '加载中...');
-        loadingElem.show();
+    // 浏览器环境要求
+    checkRequirements: function () {
+        if (!!window.ActiveXObject || "ActiveXObject" in window) {
+            // IE 浏览器升级提示
+            alert('浏览器过时，请升级浏览器');
+            window.location.href='/upgrade-browser.html';
+            return false;
+        }
+
+        if (!window.localStorage) {
+            alert('浏览器不支持 localStorage 请更换浏览器！');
+            return false;
+        }
+
+        return true;
     },
-    hide: function () {
-        $(this._sel).hide();
+
+    // Loading
+    loadingLayer: {
+        _sel: '.loading-layer',
+        show: function (text) {
+            var loadingElem = $(this._sel);
+            loadingElem.find('.loading-layer-text').html(text || '加载中...');
+            loadingElem.show();
+        },
+        hide: function () {
+            $(this._sel).hide();
+        }
     }
 };
 
@@ -39,27 +58,15 @@ app.loadingLayer = {
  * Data
  */
 app.data = {
-    register: function () {
-        if (!window.localStorage) {
-            alert('不支持 localStorage 请更换浏览器！');
-            return;
-        }
+    register: function () {},
 
-        this._user = localStorage.getItem('user');
-    },
-
-    _user: '',
     setUser: function (val) {
-        if (!val || typeof val !== 'string' || $.trim(val).length < 1) return;
-        val = $.trim(val);
-        this._user = val;
-        localStorage.setItem('user', val);
+        localStorage.setItem('user', $.trim(val));
     },
     getUser: function () {
-        return this._user || '';
+        return localStorage.getItem('user');
     },
     clearUser: function () {
-        this._user = '';
         localStorage.removeItem('user');
     },
 
@@ -84,8 +91,8 @@ app.data = {
         });
     },
 
-    uploadBooks: function () {
-        app.api.uploadCategory();
+    uploadBooks: function (onSuccess) {
+        app.api.uploadCategory(onSuccess);
     }
 };
 
@@ -104,10 +111,6 @@ app.main = {
         this.initLogin(this.login);
         this.initCategoryList(this.categoryList);
 
-        // Login Check
-        if (!!app.data.getUser())
-            this.toggleCategoryList();
-
         this.show();
     },
 
@@ -120,14 +123,23 @@ app.main = {
     },
 
     toggleCategoryList: function (userName) {
-        if (!!userName) app.data.setUser(userName);
+        app.data.setUser(userName);
         this._elem.addClass('large-size');
         this.categoryList.refreshList();
+
+        // keep last
+        app.socket.connect();
     },
 
     toggleLogin: function () {
         this._elem.removeClass('large-size');
         this.login.setYourNameVal(app.data.getUser());
+
+        app.socket.close();
+    },
+
+    isToggledLogin: function () {
+        return !this._elem.hasClass('large-size');
     }
 };
 
@@ -136,6 +148,12 @@ app.main.initLogin = function () {
     var _loginElem = $('.main-login');
     var _loginFormElem = _loginElem.find('.main-login-form');
     var _yourNameElem = _loginFormElem.find('#yourName');
+
+    var _user = app.data.getUser();
+
+    // 自动填充
+    if (!!_user)
+        _yourNameElem.val(_user);
 
     _loginFormElem.submit(function () {
         var yourNameVal = $.trim(_yourNameElem.val());
@@ -174,7 +192,7 @@ app.main.initCategoryList = function (_categoryList) {
             _categoryList.setLoading(false);
 
             // 打开工作
-            app.socket.broadcastNotify('已进入类目 ' + category['name'], 4);
+            app.socket.broadcastDanmaku('已进入类目 ' + category['name'], 4, '#2196f3');
             app.editor.startWork(categoryIndex);
         }, function () {
             _categoryList.setLoading(false);
@@ -262,13 +280,14 @@ app.main.initCategoryList = function (_categoryList) {
             });
 
             (function updateUserInfo() {
-                if (!app.data.getUser()) return;
-
-                _headElem.find('.user .username').text(app.data.getUser());
-
                 var bookCountElem = _headElem.find('.user .book-count');
+
+                var user = app.data.getUser();
+                if (!user) return;
+
+                _headElem.find('.user .username').text(user);
                 bookCountElem.text('战绩：加载中...');
-                app.api.getUser(app.data.getUser(), function (data) {
+                app.api.getUser(user, function (data) {
                     bookCountElem.text('战绩：' + data['book_total'] + ' 本书');
                 }, function () {
                     bookCountElem.text('战绩：获取失败');
@@ -428,12 +447,13 @@ app.main.createCategoryDialog = function () {
                         app.notify.success('类目 ' + categoryName + ' 已存在');
                     } else {
                         app.notify.success('类目 ' + categoryName + ' 创建成功');
+                        app.socket.broadcastDanmaku('类目 ' + categoryName + ' 已创建', 1, '#2feab7');
                     }
 
                     app.data.categoryHandle(categoryName, function (index, category) {
                         // 是否现在打开类目？
                         app.dialog.build('进入类目', '类目 ' + $.htmlEncode(categoryName) + ' 可以进入了！要现在进入吗？', ['要', function () {
-                            app.main.categoryList.startWork(index);
+                            app.main.categoryList.goToWork(index);
                         }], ['不要', null]);
 
                     });
@@ -511,7 +531,15 @@ app.api = {
 
     handleCategoryData: function (item) {
         item.isMine = function () {
-            return !!this.user && this.user === app.data.getUser();
+            return !!this.user && typeof this.user === 'string' && this.user.length > 0 && this.user === app.data.getUser();
+        };
+
+        if (typeof item.books === 'object' && item.books instanceof Array) {
+            var booksObj = {};
+            for (var i = 0; i < item.books.length; ++i)
+                booksObj[i] = item.books[i];
+            item.books = booksObj;
+            console.info('由于服务器响应的 books 为 Array 类型，已自动转换为 Object');
         }
     },
 
@@ -597,7 +625,9 @@ app.api = {
         });
     },
 
-    uploadCategory: function () {
+    uploadCategory: function (onSuccess) {
+        onSuccess = onSuccess || function () {};
+
         var localData = app.editor.local.getAll();
         if (!localData || $.isEmptyObject(localData)) {
             app.notify.info('图书没有任何改动，无需上传');
@@ -618,6 +648,8 @@ app.api = {
                 if (resp.checkMakeNotify()) {
                     // 数据修改 清空
                     app.editor.local.setAll({});
+                    app.socket.broadcastDanmaku('上传了数据', 4, '#2feab7');
+                    onSuccess();
                 }
             }, error: function () {
                 app.loadingLayer.hide();
@@ -651,86 +683,111 @@ app.api = {
 
 app.socket = {
     url: 'ws://' + document.domain + ':51230',
+
     webSocket: null,
+
     register: function () {
-        var checker = function () {
-            try {
-                app.socket.tryConnect();
-            } catch (e) {}
-        };
-
-        checker();
-
-        // Check
-        setInterval(function () {
-            checker();
-            app.socket.getOnline();
-        }, 4000);
-
+        this.initConnectGuard();
         this.initGlobalErrorListener();
     },
-    enableNotify: true,
-    tryConnect: function () {
-        if (app.data.getUser().length < 1 || this.webSocket !== null)
+
+    // 初始化连接守卫
+    initConnectGuard: function () {
+        setInterval(function () {
+            app.socket.connect();
+        }, 4000);
+
+        // Connected functions
+        setInterval(function () {
+            if (!app.socket.isConnected())
+                return;
+
+            app.socket.getOnline();
+        }, 4000);
+    },
+
+    // 建立通讯
+    connect: function () {
+        if (app.main.isToggledLogin() || !app.data.getUser() || this.webSocket !== null)
             return;
 
         this.webSocket = new WebSocket(this.url);
-
-        this.webSocket.onopen = function (obj) {
-            app.socket.debugLog('远程服务器已连接');
-            app.socket.sendData('register', {user: app.data.getUser()});
-            app.socket.getOnline();
-        };
-
-        this.webSocket.onmessage = function (obj) {
-            // app.socket.debugLog('接收消息: ' + obj.data);
-
-            var data = JSON.parse(obj.data);
-            switch (data['type']) {
-                case 'notify':
-                    if (!app.socket.enableNotify)
-                        return;
-                    // app.notify.show(data['msg'], data['level']);
-                    app.danmaku.show(data['msg'], data['mode']);
-                    break;
-                case 'getOnline':
-                    app.main.categoryList.setHeadOnline(data['online_total'], data['str']);
-                    break;
-            }
-        };
-
-        this.webSocket.onclose = function () {
-            app.socket.webSocket = null;
-            app.socket.debugLog('远程服务器已断开');
-        };
+        this.webSocket.onopen = function (obj) { app.socket.onOpen(obj); };
+        this.webSocket.onmessage = function (obj) { app.socket.onMessage(obj); };
+        this.webSocket.onclose = function () { app.socket.onClose(); };
     },
-    sendData: function (type, obj) {
-        if (this.webSocket === null || this.webSocket.readyState !== 1)
-            return;
 
-        if (typeof type !== 'string' || typeof obj !== 'object') {
-            this.log('将要发送的数据类型有误');
-            return;
+    // 是否已连接
+    isConnected: function () {
+        return this.webSocket !== null && this.webSocket.readyState === 1;
+    },
+
+    // 关闭通讯
+    close: function () {
+        this.webSocket.close();
+    },
+
+    // ==================
+    // 事件监听
+    // ==================
+    onOpen: function (obj) {
+        this.debugLog('远程服务器已连接');
+        this.sendData('register', {user: app.data.getUser()});
+        this.getOnline();
+    },
+
+    onMessage: function (obj) {
+        app.socket.debugLog('接收消息: ' + obj.data);
+        var data = JSON.parse(obj.data);
+
+        switch (data['type']) {
+            case 'danmaku':
+                app.danmaku.make(data['msg'], data['mode'], data['color']);
+                break;
+
+            case 'getOnline':
+                app.main.categoryList.setHeadOnline(data['online_total'], data['str']);
+                break;
         }
+    },
+
+    onClose: function () {
+        this.webSocket = null;
+        this.debugLog('远程服务器已断开');
+    },
+    // ==================
+
+    // 发送数据
+    sendData: function (type, obj) {
+        if (!this.isConnected())
+            throw new Error('WebSocket 通讯尚未建立');
+
+        if (typeof type !== 'string' || typeof obj !== 'object')
+            throw new Error('将要发送的数据类型有误');
 
         obj.type = type;
+        var str = JSON.stringify(obj);
 
-        var jsonStr = JSON.stringify(obj);
-        this.webSocket.send(jsonStr);
-        // this.debugLog('发送数据： \n' + jsonStr)
+        this.webSocket.send(str);
+        this.debugLog('发送数据： ' + str)
     },
+
+    // 获取在线数据
     getOnline: function () {
         this.sendData('getOnline', {});
-        return true;
     },
-    broadcastNotify: function (msg, mode) {
-        this.sendData('broadcastNotify', {'msg': msg, 'mode': mode});
-        return true;
+
+    // 全局广播
+    broadcastDanmaku: function (msg, mode, color) {
+        this.sendData('broadcastDanmaku', {msg: msg, mode: mode, color: color});
     },
+
+    // 记录调试日志
     debugLog: function (msg) {
         console.log('[app.socket] ' + msg);
     },
-    // 全局程序错误监听
+
+    // 初始化监听全局程序错误
     initGlobalErrorListener: function () {
         window.onerror = function (msg, url, lineNo, columnNo, error) {
             app.socket.sendData('logFrontendError', {
@@ -740,6 +797,7 @@ app.socket = {
                 columnNo: columnNo,
                 errorObj: JSON.stringify(error)
             });
+
             return false;
         };
     }
@@ -757,27 +815,43 @@ app.danmaku = {
         cm.init();
         cm.start(); // 启用弹幕播放
         window.CM = cm;
+
+        // Send Broadcast Danmaku Btn
+        var btnElem = $('<button class="danmaku-broadcast-send">发送弹幕</button>').appendTo('body');
+        btnElem.click(function () {
+            var msg = prompt('(～￣▽￣)～ 输入弹幕内容（可选：#C#HEX=内容）：', '');
+            if (msg !== null && msg !== '') {
+                var mode = 1;
+                var color = '#FFFFFF';
+
+                if (msg.substring(0, 2) === '#C') {
+                    var arr = msg.substring(msg.indexOf('#C') + 2, msg.length).split('=');
+                    color = arr[0];
+                    msg = arr[1];
+                }
+
+                app.socket.broadcastDanmaku('说：' + msg, mode, color);
+            }
+        });
     },
-    show: function (message, mode) {
+
+    make: function (message, mode, color) {
         mode = Number(mode);
-        if (mode === 4) {
-            CM.send({
-                "mode": 4,
-                "text": message,
-                "stime":0,
-                "size":25,
-                "color":0x2196F3
-            })
-        } else {
-            CM.send({
-                mode: mode,
-                text: message,
-                stime: 0,
-                size: 25,
-                color: 0xffffff,
-                dur: 8000
-            });
+
+        var colorHEX = parseInt((color || '#FFF').replace(/^#/, ''), 16);
+        var config = {
+            mode: mode,
+            text: message,
+            stime: 0,
+            size: 25,
+            color: colorHEX
+        };
+
+        if (mode === 1 || mode === 2) {
+            config.dur = 7500;
         }
+
+        CM.send(config);
     }
 };
 

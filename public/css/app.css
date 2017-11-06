@@ -713,6 +713,7 @@ a {
     height: 35px;
     overflow: hidden;
     border: 1px solid transparent;
+    border-bottom-color: #86c5f7;
     border-radius: 1px;
     transition: all .3s ease;
     font-weight: bold;
@@ -1225,10 +1226,10 @@ a {
     position: fixed;
     pointer-events: none;
     user-select: none;
-    top: 3%;
+    top: 5%;
     right: 0;
     width: 100%;
-    height: 94%;
+    height: 90%;
 }
 
 .danmaku-layer {
@@ -1280,6 +1281,27 @@ a {
 
 .danmaku-layer .cmt.rshadow {
     text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;
+}
+
+.danmaku-broadcast-send {
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    background: #FFF;
+    padding: 10px 30px;
+    border-radius: 1px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    color: #1DAAFF;
+    opacity: .8;
+    transition: all .2s ease-in-out;
+}
+
+.danmaku-broadcast-send:hover {
+    opacity: 1;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
 }
 
 /** Aliases for Chinese named fonts because they don't work on *nix **/

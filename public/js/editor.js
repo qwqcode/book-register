@@ -9,7 +9,9 @@ app.editor = {
     },
 
     startWork: function (categoryIndex, opts) {
-        this._wrapElem.html($('#editorTPL').html());
+        // language=HTML
+        this._wrapElem.html('<div class="editor">\n    <div class="editor-tool-bar">\n        <div class="left-part">\n            <span class="title">编辑</span>\n        </div>\n        <div class="right-part">\n            <span class="action-item" data-toggle="exit"><i class="zmdi zmdi-arrow-left"></i> 返回</span>\n            <span class="action-item" data-app-help="editor"><i class="zmdi zmdi-help"></i> 说明</span>\n            <span class="action-item" data-toggle="refresh"><i class="zmdi zmdi-refresh"></i> 更新</span>\n            <span class="action-item" data-toggle="upload"><i class="zmdi zmdi-cloud-upload"></i> 上传 <span class="local-data-count">0</span></span>\n        </div>\n    </div>\n    <form class="editor-inserter" onsubmit="return false;">\n        <div class="numbering-controller left-part">\n            <span class="current-book-info">\n                <span class="category-name">?</span>\n                <input type="text" class="numbering" autocomplete="off" spellcheck="false" />\n            </span>\n            <button type="button" class="pre-book-btn"></button>\n        </div>\n        <div class="fields-inputs">\n            <input type="text" class="form-control" spellcheck="false" autocomplete="off" name="name" placeholder="书名" />\n            <input type="text" class="form-control" spellcheck="false" autocomplete="off" name="press" placeholder="出版社" />\n            <input type="text" class="form-control" spellcheck="false" autocomplete="off" name="remarks" placeholder="备注" />\n        </div>\n        <div class="numbering-controller right-part">\n            <button type="submit" class="nxt-book-btn"></button>\n        </div>\n    </form>\n    <div class="editor-book-list">\n        <div class="list-content"></div>\n    </div>\n</div>');
+
         this._wrapElem.find('[data-app-help="editor"]').click(function () {
             appHelp.editor.show();
         });
@@ -57,15 +59,21 @@ app.editor.work = function (categoryIndex, opts) {
      */
     (function basicMethods() {
         // Reload
-        _work.refresh = function () {
+        _work.refresh = function (softRefresh) {
             _work.mergeBookLocal();
             _work.bookList.refresh();
-            var lastBookNumbering = _getLastBookNum();
-            if (lastBookNumbering > 0) {
-                _work.redirectBook(lastBookNumbering);
+
+            if (!softRefresh) {
+                var lastBookNumbering = _getLastBookNum();
+                if (lastBookNumbering > 0) {
+                    _work.redirectBook(lastBookNumbering);
+                } else {
+                    _work.addEmptyBook();
+                    _work.redirectBook(1);
+                }
             } else {
-                _work.addEmptyBook();
-                _work.redirectBook(1);
+                // Refresh inserter for current book show
+                _work.inserter.refresh();
             }
         };
 
@@ -135,6 +143,27 @@ app.editor.work = function (categoryIndex, opts) {
                 }
             }
         };
+
+        // 从远程刷新本地数据
+        _work.refreshFromServer = function (onSuccess, onError) {
+            onSuccess = onSuccess || function () {};
+            onError = onError || function () {};
+
+            _work.inserter.saveInputs();
+            app.loadingLayer.show('正在更新图书数据');
+            app.api.getCategoryBooks(categoryIndex, function () {
+                app.loadingLayer.hide();
+                _work.category = app.data.categoris[categoryIndex];
+                _work.books = _work.category.books;
+                _work.refresh(true);
+                app.notify.success('更新完毕');
+                onSuccess();
+            }, function () {
+                app.loadingLayer.hide();
+                app.notify.error('更新失败');
+                onError();
+            });
+        };
     })();
 
     /**
@@ -148,22 +177,14 @@ app.editor.work = function (categoryIndex, opts) {
             _work.exit();
         });
         toolbarElem.find('[data-toggle="refresh"]').click(function () {
-            var currentBookNum = _currentBook.getNum();
-            app.loadingLayer.show('正在更新图书数据');
-            app.api.getCategoryBooks(categoryIndex, function () {
-                app.loadingLayer.hide();
-                _work.category = app.data.categoris[categoryIndex];
-                _work.books = _work.category.books;
-                _work.refresh();
-                _work.redirectBook(currentBookNum);
-                app.notify.success('更新完毕');
-            }, function () {
-                app.loadingLayer.hide();
-                app.notify.error('更新失败');
-            });
+            _work.refreshFromServer();
         });
         toolbarElem.find('[data-toggle="upload"]').click(function () {
-            app.data.uploadBooks();
+            _work.inserter.saveInputs();
+            app.data.uploadBooks(function () {
+                // 上传成功
+                _work.refresh(true);
+            });
         });
     })();
 
@@ -272,7 +293,7 @@ app.editor.work = function (categoryIndex, opts) {
                 var rawBook = _work.books[numbering];
                 if (!rawBook) throw new Error('原始图书数据不存在 [numbering=' + numbering + ']');
 
-                var isUpdated = false;
+                var saveBookToLocal = {}; // waiting for adding...
                 for (var fieldName in fieldInputElems) {
                     if (!fieldInputElems.hasOwnProperty(fieldName)) continue;
                     if (!rawBook.hasOwnProperty(fieldName)) continue;
@@ -280,20 +301,24 @@ app.editor.work = function (categoryIndex, opts) {
                     var isNull = value.length <= 0;
                     var isChanged = value !== rawBook[fieldName];
 
-                    if (isChanged) {
-                        isUpdated = true;
+                    if (isChanged && !isNull) {
                         rawBook[fieldName] = value;
-                        if (isNull) // remove
-                           app.editor.local.remove(_categoryName, numbering, fieldName)
+                        saveBookToLocal[fieldName] = value;
+                    }
+
+                    if (isChanged && isNull) {
+                        // check remove from local
+                        app.editor.local.remove(_categoryName, numbering, fieldName);
+                        rawBook[fieldName] = '';
                     }
                 }
 
-                if (isUpdated) {
-                    app.editor.local.put(_categoryName, numbering, rawBook);
-
-                    // update book list item
-                    _work.bookList.notifyItemChanged(numbering);
+                if (Object.keys(saveBookToLocal).length > 0) {
+                    app.editor.local.put(_categoryName, numbering, saveBookToLocal);
                 }
+
+                // update book list item ui
+                _work.bookList.notifyItemChanged(numbering);
             };
 
             var enableInputAutocomplete = function (fieldName) {
@@ -419,6 +444,9 @@ app.editor.work = function (categoryIndex, opts) {
                         _work.redirectBook(numbering);
                     }
                 });
+
+            // Book List Item Focus
+            bookList.focusItem(_currentBook.getNum());
         };
 
         bookList.itemRender = function (book) {
@@ -471,7 +499,9 @@ app.editor.work = function (categoryIndex, opts) {
         };
 
         bookList.focusItem = function (numbering) {
+            if (numbering <= 0 || numbering > _getLastBookNum()) return;
             var itemElem = bookList.getItemElem(numbering);
+            if (itemElem.hasClass('edit-focused')) return;
             bookListContentElem.find('.edit-focused').removeClass('edit-focused');
             itemElem.addClass('edit-focused');
             bookList.scrollToItem(numbering);

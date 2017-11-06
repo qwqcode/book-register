@@ -77,42 +77,5 @@
 
     <!-- Editor -->
     <div class="editor-wrap anim-fade-in" style="display: none"></div>
-
-    <!-- Editor Tpl -->
-    <script id="editorTPL" type="text/html">
-        <div class="editor">
-            <div class="editor-tool-bar">
-                <div class="left-part">
-                    <span class="title">编辑</span>
-                </div>
-                <div class="right-part">
-                    <span class="action-item" data-toggle="exit"><i class="zmdi zmdi-arrow-left"></i> 返回</span>
-                    <span class="action-item" data-app-help="editor"><i class="zmdi zmdi-help"></i> 说明</span>
-                    <span class="action-item" data-toggle="refresh"><i class="zmdi zmdi-refresh"></i> 更新</span>
-                    <span class="action-item" data-toggle="upload"><i class="zmdi zmdi-cloud-upload"></i> 上传 <span class="local-data-count">0</span></span>
-                </div>
-            </div>
-            <form class="editor-inserter" onsubmit="return false;">
-                <div class="numbering-controller left-part">
-                    <span class="current-book-info">
-                        <span class="category-name">?</span>
-                        <input type="text" class="numbering" autocomplete="off" spellcheck="false" />
-                    </span>
-                    <button type="button" class="pre-book-btn"></button>
-                </div>
-                <div class="fields-inputs">
-                    <input type="text" class="form-control" spellcheck="false" autocomplete="off" name="name" placeholder="书名" />
-                    <input type="text" class="form-control" spellcheck="false" autocomplete="off" name="press" placeholder="出版社" />
-                    <input type="text" class="form-control" spellcheck="false" autocomplete="off" name="remarks" placeholder="备注" />
-                </div>
-                <div class="numbering-controller right-part">
-                    <button type="submit" class="nxt-book-btn"></button>
-                </div>
-            </form>
-            <div class="editor-book-list">
-                <div class="list-content"></div>
-            </div>
-        </div>
-    </script>
 </body>
 </html>

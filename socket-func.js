@@ -24,15 +24,12 @@ var broadcast = function (obj) {
     });
 };
 
-// level: s, e, i, w
-var notify = function (msg, mode) {
-    if (mode === undefined)
-        mode = '2';
-
+var danmaku = function (msg, mode, color) {
     return {
-        type: 'notify',
+        type: 'danmaku',
         msg: msg,
-        mode: mode
+        mode: mode || 2,
+        color: color || '#FFFFFF'
     };
 };
 
@@ -49,7 +46,7 @@ wss.on('connection', function (ws, req) {
 
     // 当前用户标识
     var id = req.headers['sec-websocket-key'];
-    var currentUser = '';
+    var currentUser = '无名英雄';
 
     // 接收消息事件
     var onMessage = function (data) {
@@ -60,7 +57,7 @@ wss.on('connection', function (ws, req) {
                 users[id] = currentUser;
                 // MSG
                 console.log(currentUser + ' ['+ id +'] 已上线');
-                broadcast(notify('[新成员] ' + currentUser + ' 上线了', '2'));
+                broadcast(danmaku('[新成员] ' + currentUser + ' 上线了', 2));
                 break;
 
             case 'getOnline':
@@ -80,8 +77,8 @@ wss.on('connection', function (ws, req) {
                 });
                 break;
 
-            case 'broadcastNotify':
-                broadcast(notify('[' + currentUser  + '] ' + data['msg'], data['mode'] || '2'));
+            case 'broadcastDanmaku':
+                broadcast(danmaku('[' + currentUser  + '] ' + data['msg'], data['mode'], data['color']));
                 break;
 
             case 'logFrontendError':
@@ -113,7 +110,7 @@ wss.on('connection', function (ws, req) {
 
         // MSG
         console.log(currentUser + ' 下线');
-        broadcast(notify('成员 ' + currentUser + ' 下线了', 'w'));
+        broadcast(danmaku('[新成员] ' + currentUser + ' 下线了', 2));
     };
 
     // 绑定事件

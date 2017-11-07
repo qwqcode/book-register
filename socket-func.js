@@ -57,7 +57,7 @@ wss.on('connection', function (ws, req) {
                 users[id] = currentUser;
                 // MSG
                 console.log(currentUser + ' ['+ id +'] 已上线');
-                broadcast(danmaku('[新成员] ' + currentUser + ' 上线了', 2));
+                broadcast(danmaku('[系统] 成员 ' + currentUser + ' 上线了', 2));
                 break;
 
             case 'getOnline':
@@ -110,7 +110,7 @@ wss.on('connection', function (ws, req) {
 
         // MSG
         console.log(currentUser + ' 下线');
-        broadcast(danmaku('[新成员] ' + currentUser + ' 下线了', 2));
+        broadcast(danmaku('[系统] 成员 ' + currentUser + ' 下线了', 2));
     };
 
     // 绑定事件

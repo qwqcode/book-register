@@ -158,12 +158,8 @@ app.main.initLogin = function () {
     _loginFormElem.submit(function () {
         var yourNameVal = $.trim(_yourNameElem.val());
 
-        if (yourNameVal.length < 1) {
+        if (yourNameVal.length < 1 || !/^[\u4e00-\u9fa5]{2,4}$/.test(yourNameVal)) {
             app.notify.warning('请填入你的真实姓名');
-            return false;
-        }
-        if (yourNameVal.length > 4) {
-            app.notify.warning('名字只允许最多 4 个字');
             return false;
         }
 

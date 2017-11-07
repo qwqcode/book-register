@@ -45,7 +45,6 @@ wss.on('connection', function (ws, req) {
     // 当前用户标识
     var wsKey = req.headers['sec-websocket-key'];
     var ipAddr = req.connection.remoteAddress;
-    console.log(ipAddr);
     var username = '无名英雄';
 
     // Log

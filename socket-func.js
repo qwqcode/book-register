@@ -10,7 +10,7 @@ var conf = {
 var wss = new ws.Server(conf);
 
 // Go it!
-console.log('\n[' + new Date().toLocaleString() + '] >> Listening...');
+console.log('[' + new Date().toLocaleString() + '] >> Listening...');
 
 // 用户在线记录
 var users = {};

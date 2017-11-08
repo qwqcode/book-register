@@ -70,26 +70,8 @@ app.data = {
         localStorage.removeItem('user');
     },
 
-    categoris: {},
-    categoryHandle: function (categoryName, handle) {
-        for (var i in this.categoris) {
-            if (this.categoris[i]['name'] === categoryName) {
-                handle(i, this.categoris[i]);
-                break;
-            }
-        }
-    },
-    categoryBookHandle: function (categoryName, booksNumbering, handle) {
-        this.categoryHandle(categoryName, function (category) {
-            for (var i in category['books']) {
-                var book = category['books'][i];
-                if (book['numbering'] === booksNumbering) {
-                    handle(i, book);
-                    break;
-                }
-            }
-        });
-    },
+    // Key = 类目名
+    categories: {},
 
     uploadBooks: function (onSuccess) {
         app.api.uploadCategory(onSuccess);
@@ -108,8 +90,8 @@ app.main = {
         this._elem = $('.main');
         this._wrapElem = $('.main-wrap');
 
-        this.initLogin(this.login);
-        this.initCategoryList(this.categoryList);
+        this.initLogin();
+        this.initCategoryList();
 
         this.show();
     },
@@ -174,22 +156,22 @@ app.main.initLogin = function () {
     };
 };
 
-app.main.initCategoryList = function (_categoryList) {
+app.main.initCategoryList = function () {
+    var _categoryList = this.categoryList;
     var _listElem = $('.main-category-list');
     var _headElem = _listElem.find('.main-category-list-head');
     var _listContentElem = _listElem.find('.main-category-list-content');
 
-    _categoryList.goToWork = function (categoryIndex) {
+    _categoryList.goToWork = function (categoryName) {
         _categoryList.setLoading(true);
-        var category = app.data.categoris[categoryIndex];
-        app.api.getCategoryBooks(categoryIndex, function () {
+        app.api.getCategoryBooks(categoryName, function () {
             // 刷新类目列表
             _categoryList.refreshListFromObj();
             _categoryList.setLoading(false);
 
             // 打开工作
-            app.socket.broadcastDanmaku('已进入类目 ' + category['name'], 4, '#2196f3');
-            app.editor.startWork(categoryIndex);
+            app.socket.broadcastDanmaku('已进入类目 ' + categoryName, 4, '#2196f3');
+            app.editor.startWork(app.data.categories[categoryName]);
         }, function () {
             _categoryList.setLoading(false);
             app.notify.error('无法打开该类目');
@@ -232,10 +214,11 @@ app.main.initCategoryList = function (_categoryList) {
             var value = $.trim($(this).val());
             if (value.length > 0) {
                 var categoryData = [];
-                for (var i in app.data.categoris) {
-                    var item = app.data.categoris[i];
-                    if ($.trim(item['name']).toUpperCase().indexOf(value.toUpperCase()) >= 0) {
-                        categoryData[i] = item;
+                for (var key in app.data.categories) {
+                    if (!app.data.categories.hasOwnProperty(key)) continue;
+                    var item = app.data.categories[key];
+                    if ($.trim(item.name).toUpperCase().indexOf(value.toUpperCase()) >= 0) {
+                        categoryData[key] = item;
                     }
                 }
                 _categoryList.refreshListFromObj(categoryData);
@@ -292,36 +275,37 @@ app.main.initCategoryList = function (_categoryList) {
         };
 
         _categoryList.refreshListFromObj = function (categoryData) {
-            var categories = categoryData || app.data.categoris;
+            var categories = categoryData || app.data.categories;
 
             _listContentElem.html('');
 
             // 我负责的
-            for (var indexMine in categories) {
-                var itemMine = categories[indexMine];
-                if (!itemMine.isMine()) continue;
-                _categoryList.itemRender(indexMine, itemMine)
-                    .appendTo(_listContentElem);
-            }
+            var filterAppend = function (getMine) {
+                for (var categoryName in categories) {
+                    if (!categories.hasOwnProperty(categoryName)) continue;
+                    var item = categories[categoryName];
+                    if (getMine && !item.isMine()) continue;
+                    if (!getMine && item.isMine()) continue;
+                    _categoryList.itemRender(categoryName, item)
+                        .appendTo(_listContentElem);
+                }
+            };
 
-            // 非我负责的
-            for (var index in categories) {
-                var item = categories[index];
-                if (item.isMine()) continue;
-                _categoryList.itemRender(index, item)
-                    .appendTo(_listContentElem);
-            }
+            filterAppend(true); // 我负责的类目添加到列表
+            filterAppend(false); // 非我负责的
 
             //_listContentElem.scrollTop(0); // 滚动归零
         };
 
         _categoryList.itemRender = function (index, category) {
-            var categoryName = $.htmlEncode(category['name'] || "未命名");
+            var categoryName = $.htmlEncode(category['name'] || '');
+
+            if (categoryName.length <= 0) return;
 
             var itemElem = $(
-                '<div class="item col-sm-6 col-md-3' + (category.isMine() ? ' is-mine' : '') + '' +
+                '<div class="item col-sm-6 col-md-3' + (category.isMine() ? ' is-mine' : '') +
                 (String(category['remarks']).indexOf('已完成') >= 0 ? ' is-completed' : '') +
-                '" data-category-index="' + index + '">' +
+                '">' +
                 '<div class="item-inner">' +
 
                 '<div class="item-head">' +
@@ -339,7 +323,7 @@ app.main.initCategoryList = function (_categoryList) {
             );
 
             itemElem.find('.item-head').click(function () {
-                _categoryList.goToWork(index);
+                _categoryList.goToWork(categoryName);
             });
 
             itemElem.find('.item-meta > a').click(function showCategoryInfo() {
@@ -446,14 +430,12 @@ app.main.createCategoryDialog = function () {
                         app.socket.broadcastDanmaku('类目 ' + categoryName + ' 已创建', 1, '#2feab7');
                     }
 
-                    app.data.categoryHandle(categoryName, function (index, category) {
+                    if (app.data.categories.hasOwnProperty(categoryName)) {
                         // 是否现在打开类目？
                         app.dialog.build('进入类目', '类目 ' + $.htmlEncode(categoryName) + ' 可以进入了！要现在进入吗？', ['要', function () {
-                            app.main.categoryList.goToWork(index);
+                            app.main.categoryList.goToWork(categoryName);
                         }], ['不要', null]);
-
-                    });
-
+                    }
                 });
             }, function () {
                 app.main.categoryList.refreshList();
@@ -550,11 +532,11 @@ app.api = {
                 var resp = app.api.responseHandle(data);
                 data = resp.checkGetData();
                 if (!!data) {
-                    for (var i in data['categories']) {
-                        var item = data['categories'][i];
+                    for (var categoryName in data['categories']) {
+                        var item = data['categories'][categoryName];
                         app.api.handleCategoryData(item);
                     }
-                    app.data.categoris = data['categories'];
+                    app.data.categories = data['categories'];
                     onSuccess(data);
                 } else {
                     onError(data);
@@ -589,27 +571,27 @@ app.api = {
         });
     },
 
-    getCategoryBooks: function (categoryDataIndex, onSuccess, onError) {
+    getCategoryBooks: function (categoryName, onSuccess, onError) {
         onSuccess = onSuccess || function () {};
         onError = onError || function () {};
 
-        if (!app.data.categoris.hasOwnProperty(categoryDataIndex)) {
-            app.notify.error('找不到 index=' + categoryDataIndex + ' 的类目');
+        if (!app.data.categories.hasOwnProperty(categoryName)) {
+            app.notify.error('找不到 ' + categoryName + ' 类 对象');
             return;
         }
 
-        var categoryData = app.data.categoris[categoryDataIndex];
+        var category = app.data.categories[categoryName];
 
         $.ajax({
             url: '/getCategory', data: {
-                'name': categoryData['name']
+                'name': categoryName
             }, success: function (data) {
                 var resp = app.api.responseHandle(data);
                 data = resp.checkGetData();
                 if (!!data) {
                     // 更新类目列表数据
-                    app.data.categoris[categoryDataIndex] = data['categories'][0];
-                    app.api.handleCategoryData(app.data.categoris[categoryDataIndex]);
+                    app.data.categories[categoryName] = data.categories[categoryName];
+                    app.api.handleCategoryData(app.data.categories[categoryName]);
                     onSuccess(data);
                 } else {
                     onError(data);
@@ -755,8 +737,10 @@ app.socket = {
 
     // 发送数据
     sendData: function (type, obj) {
-        if (!this.isConnected())
-            throw new Error('WebSocket 通讯尚未建立');
+        if (!this.isConnected()) {
+            app.notify.warning('WebSocket 通讯尚未建立');
+            return;
+        }
 
         if (typeof type !== 'string' || typeof obj !== 'object')
             throw new Error('将要发送的数据类型有误');

@@ -119,9 +119,10 @@ class ApiController extends Controller
         }
         
         $apiData = [];
-        foreach ($categories as $index => $item) {
+        foreach ($categories as $item) {
             /** @var $item Category */
             $booksCount = $item->books->count();
+            $itemCategoryName = $item->name;
             
             $users = [];
             $workers = $item->books->groupBy('user')->keys()->all();
@@ -134,8 +135,8 @@ class ApiController extends Controller
                 ];
             }
             
-            $apiData[$index] = [
-                'name'              => $item->name,
+            $apiData[$itemCategoryName] = [
+                'name'              => $itemCategoryName,
                 'user'              => $item->user,
                 'users'             => $users,
                 'remarks'           => $item->remarks,
@@ -147,7 +148,7 @@ class ApiController extends Controller
             ];
             
             if (!empty($withBooks) || !empty($name)) {
-                $apiData[$index]['books'] = $this->handleBooksForGetting($item->books->toArray());
+                $apiData[$itemCategoryName]['books'] = $this->handleBooksForGetting($item->books->toArray());
             }
         }
         
@@ -194,18 +195,27 @@ class ApiController extends Controller
                 'user'       => $user,
                 'updated_at' => $time,
             ];
+    
+            $count = $this->tableBook()->where($attributes)->count();
+            if ($count > 1) {
+                // delete all then create new
+                $this->tableBook()->where($attributes)->delete();
+                $values['created_at'] = $time;
+            } else if ($count == 1) {
+                // normal update
+            } else if ($count < 1) {
+                // create new
+                $values['created_at'] = $time;
+            }
             
             if (!empty($bookItem['name']))
-                $values = array_merge($values, ['name' => $bookItem['name']]);
+                $values['name'] = $bookItem['name'];
             
             if (!empty($bookItem['press']))
-                $values = array_merge($values, ['press' => $bookItem['press']]);
+                $values['press'] = $bookItem['press'];
             
             if (!empty($bookItem['remarks']))
-                $values = array_merge($values, ['remarks' => $bookItem['remarks']]);
-            
-            if (!$this->tableBook()->where($attributes)->exists())
-                $values = array_merge($values, ['created_at' => $time]);
+                $values['remarks'] = $bookItem['remarks'];
             
             $this->tableBook()->updateOrInsert($attributes, $values);
             

@@ -8,7 +8,7 @@ app.editor = {
         this._wrapElem = $('.editor-wrap');
     },
 
-    startWork: function (categoryIndex, opts) {
+    startWork: function (rawCategoryObj, opts) {
         // language=HTML
         this._wrapElem.html('<div class="editor">\n    <div class="editor-tool-bar">\n        <div class="left-part">\n            <span class="title">编辑</span>\n        </div>\n        <div class="right-part">\n            <span class="action-item" data-toggle="exit"><i class="zmdi zmdi-arrow-left"></i> 返回</span>\n            <span class="action-item" data-app-help="editor"><i class="zmdi zmdi-help"></i> 说明</span>\n            <span class="action-item" data-toggle="refresh"><i class="zmdi zmdi-refresh"></i> 更新</span>\n            <span class="action-item" data-toggle="upload"><i class="zmdi zmdi-cloud-upload"></i> 上传 <span class="local-data-count">0</span></span>\n        </div>\n    </div>\n    <form class="editor-inserter" onsubmit="return false;">\n        <div class="numbering-controller left-part">\n            <span class="current-book-info">\n                <span class="category-name">?</span>\n                <input type="text" class="numbering" autocomplete="off" spellcheck="false" />\n            </span>\n            <button type="button" class="pre-book-btn"></button>\n        </div>\n        <div class="fields-inputs">\n            <input type="text" class="form-control" spellcheck="false" autocomplete="off" name="name" placeholder="书名" />\n            <input type="text" class="form-control" spellcheck="false" autocomplete="off" name="press" placeholder="出版社" />\n            <input type="text" class="form-control" spellcheck="false" autocomplete="off" name="remarks" placeholder="备注" />\n        </div>\n        <div class="numbering-controller right-part">\n            <button type="submit" class="nxt-book-btn"></button>\n        </div>\n    </form>\n    <div class="editor-book-list">\n        <div class="list-content"></div>\n    </div>\n</div>');
 
@@ -16,7 +16,7 @@ app.editor = {
             appHelp.editor.show();
         });
 
-        var instance = this.instance = new this.work(categoryIndex, opts);
+        var instance = this.instance = new this.work(rawCategoryObj, opts);
         instance.hooks.onExit = function () {
             app.editor.exitWork();
         };
@@ -34,11 +34,11 @@ app.editor = {
     }
 };
 
-app.editor.work = function (categoryIndex, opts) {
+app.editor.work = function (rawCategoryObj, opts) {
     var _editorElem = $('.editor');
     var _work = this;
 
-    _work.category =  app.data.categoris[categoryIndex];
+    _work.category =  rawCategoryObj;
     _work.books = _work.category.books;
 
     var _categoryName = _work.category.name;
@@ -151,9 +151,9 @@ app.editor.work = function (categoryIndex, opts) {
 
             _work.inserter.saveInputs();
             app.loadingLayer.show('正在更新图书数据');
-            app.api.getCategoryBooks(categoryIndex, function () {
+            app.api.getCategoryBooks(_categoryName, function () {
                 app.loadingLayer.hide();
-                _work.category = app.data.categoris[categoryIndex];
+                _work.category = app.data.categories[_categoryName];
                 _work.books = _work.category.books;
                 _work.refresh(true);
                 app.notify.success('更新完毕');
@@ -344,9 +344,9 @@ app.editor.work = function (categoryIndex, opts) {
 
                     var panelElem = $('<div class="input-auto-complete-panel"><div class="panel-options"></div></div>');
                     var inputPos = $.getPosition(inputElem);
-                    panelElem.css('left', inputPos['left'] + 'px')
-                        .css('top', inputPos['bottom'] + 'px')
-                        .css('width', inputPos['width'] + 'px');
+                    panelElem.css('left', inputPos.left + 'px')
+                        .css('top', inputPos.bottom + 'px')
+                        .css('width', inputPos.width + 'px');
                     panelElem.on('mousedown', function (event) { event.preventDefault(); });
 
                     var optionsDom = panelElem.find('.panel-options');
@@ -450,11 +450,11 @@ app.editor.work = function (categoryIndex, opts) {
         };
 
         bookList.itemRender = function (book) {
-            var numbering = book['numbering'],
+            var numbering = book.numbering,
                 numberingFull = _categoryName + ' ' + numbering,
-                bookName = book['name'] || '',
-                bookPress = book['press'] || '',
-                bookRemarks = book['remarks'] || '';
+                bookName = book.name || '',
+                bookPress = book.press || '',
+                bookRemarks = book.remarks || '';
 
             var itemElem = $(
                 '<div class="list-item" data-numbering="' + numbering + '">' +
@@ -478,7 +478,7 @@ app.editor.work = function (categoryIndex, opts) {
         };
 
         bookList.insertRow = function (book) {
-            if (bookList.getItemElem(book['numbering']).length > 0)
+            if (bookList.getItemElem(book.numbering).length > 0)
                 return;
 
             var itemElem = bookList.itemRender(book);
@@ -548,7 +548,7 @@ app.editor.local = {
     put: function (categoryName, bookNumbering, book) {
         if (!categoryName || !bookNumbering || typeof book !== 'object' || $.isEmptyObject(book))
             throw new Error('参数残缺！');
-        if (!book['name'] && !book['press'] && !book['remarks'])
+        if (!book.name && !book.press && !book.remarks)
             return;
 
         var localCategoris = this.getAll();
@@ -559,9 +559,9 @@ app.editor.local = {
             localCategoris[categoryName][bookNumbering] = {};
 
         var localBook = localCategoris[categoryName][bookNumbering];
-        if (!!book['name']) localBook.name = book['name'];
-        if (!!book['press']) localBook.press = book['press'];
-        if (!!book['remarks']) localBook.remarks = book['remarks'];
+        if (!!book.name) localBook.name = book.name;
+        if (!!book.press) localBook.press = book.press;
+        if (!!book.remarks) localBook.remarks = book.remarks;
 
         this.setAll(localCategoris);
     },

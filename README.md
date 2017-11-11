@@ -35,7 +35,7 @@ git clone https://github.com/Zneiat/book-register.git
 composer install
 
 php -r "copy('.env.example', '.env');"
-# 然后需 .env 里配置数据库连接
+# 然后到 .env 里配置数据库连接
 
 php artisan key:generate
 php artisan migrate
@@ -59,23 +59,31 @@ MIT
 # Screenshots
 
 ### 2017-11-11
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/login.png)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/category_list.png)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/danmaku.gif)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/editor.png)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/inserter.gif)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/autocomplete.gif)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/ranking.png)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/socket-func.png)
+<p align="center">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/login.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/category_list.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/danmaku.gif">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/editor.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/inserter.gif">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/autocomplete.gif">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/ranking.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/socket-func.png">
+</p>
 
 ### 2017-10-28
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-28-1.png)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-28-2.png)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-28-3.png)
+<p align="center">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-28-1.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-28-2.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-28-3.png">
+</p>
 
 ### 2017-10-23
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/2017-10-23-1.png)
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/2017-10-23-2.png)
+<p align="center">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-23-1.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-23-2.png">
+</p>
 
 ### 2017-10-6
-![screenshot](https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-6-1.png)
+<p align="center">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-6-1.png">
+</p>

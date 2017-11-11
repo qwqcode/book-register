@@ -141,10 +141,10 @@ class ApiController extends Controller
                 'users'             => $users,
                 'remarks'           => $item->remarks,
                 'books_count'       => $booksCount,
-                'updated_at'        => $item->updated_at->timestamp,
-                'created_at'        => $item->created_at->timestamp,
-                'updated_at_format' => $item->updated_at->toDateTimeString(),
-                'created_at_format' => $item->updated_at->toDateTimeString(),
+                'updated_at'        => $item->updated_at->timestamp ?? 0,
+                'created_at'        => $item->created_at->timestamp ?? 0,
+                'updated_at_format' => $item->updated_at ? $item->updated_at->toDateTimeString() : '',
+                'created_at_format' => $item->created_at ? $item->created_at->toDateTimeString() : '',
             ];
             
             if (!empty($withBooks) || !empty($name)) {
@@ -167,7 +167,7 @@ class ApiController extends Controller
     {
         $user = trim($request->post('user'));
         $books = trim($request->post('books'));
-        $time = time();
+        $time = \Carbon\Carbon::now()->toDateTimeString();
         
         if (empty($user))
             return $this->error('参数 user 是必须的');
@@ -274,7 +274,7 @@ class ApiController extends Controller
     {
         $user = trim($request->get('user'));
         $name = trim($request->get('name'));
-        $time = time();
+        $time = \Carbon\Carbon::now()->toDateTimeString();
         
         if (empty($user))
             return $this->error('参数 user 是必须的');

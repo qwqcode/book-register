@@ -23,4 +23,4 @@ $router->get('/getRanking', 'ApiController@getRanking');
 $router->get('/getCategory', 'ApiController@getCategory');
 $router->post('/uploadCategory', 'ApiController@uploadCategory');
 $router->get('/categoryCreate', 'ApiController@categoryCreate');
-$router->get('/categoryExcel[/{name}]', 'ApiController@categoryExcel');
+$router->get('/categoryExcel', 'ApiController@categoryExcel');

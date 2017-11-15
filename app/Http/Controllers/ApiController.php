@@ -309,12 +309,16 @@ class ApiController extends Controller
      *
      * @inheritdoc
      */
-    public function categoryExcel(Request $request, $name = null)
+    public function categoryExcel(Request $request)
     {
         // 准备数据
         $categories = $this->tableCategory('`name` ASC');
         $datetime = date('Y-m-d His', time());
-    
+        $name = $request->get('name');
+        $mode = $request->get('mode', '1');
+        $allowMode = ['1', '2'];
+        if (!in_array($mode, $allowMode)) $mode = '1';
+        
         if (!empty($name)) {
             $categories = $categories->where(['name' => $name]);
             $title = 'Category ' . $name . ' ' . $datetime;
@@ -332,7 +336,7 @@ class ApiController extends Controller
             ['类目', '序号', '索引号', '书名', '出版社', '备注', '登记员'],
         ];
     
-        $buildSingleCategoryData = function (Category $categoryData) {
+        $buildSingleCategoryData = function (Category $categoryData) use ($mode) {
             $categoryName = $categoryData->name;
         
             if (empty($categoryName))
@@ -346,9 +350,12 @@ class ApiController extends Controller
                 return null;
             $books = $books->get();
             
+            if ($mode === '2')
+                $books = json_decode(json_encode($this->handleBooksForGetting($books->toArray())));
+            
             $data = [];
             foreach ($books as $bookItem) {
-                if (empty($bookItem->numbering) || (empty($bookItem->name) && empty($bookItem->press) && empty($bookItem->remarks)))
+                if ($mode === '1' && (empty($bookItem->numbering) || (empty($bookItem->name) && empty($bookItem->press) && empty($bookItem->remarks))))
                     continue;
             
                 $numbering = $bookItem->numbering;

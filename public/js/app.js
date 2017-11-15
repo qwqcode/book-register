@@ -298,7 +298,7 @@ app.main.initCategoryList = function () {
         };
 
         _categoryList.itemRender = function (index, category) {
-            var categoryName = $.htmlEncode(category['name'] || '');
+            var categoryName = category['name'] || '';
 
             if (categoryName.length <= 0) return;
 
@@ -309,7 +309,7 @@ app.main.initCategoryList = function () {
                 '<div class="item-inner">' +
 
                 '<div class="item-head">' +
-                '<span class="category-name">' + categoryName + '</span>' +
+                '<span class="category-name">' + $.htmlEncode(categoryName) + '</span>' +
                 '</div>' +
 
                 '<div class="item-meta">' +
@@ -329,8 +329,10 @@ app.main.initCategoryList = function () {
             itemElem.find('.item-meta > a').click(function showCategoryInfo() {
                 var content = $(
                     '<div class="dialog-category-users">' +
-                    '<div class="created">创建者：' + category['user'] + '</div>' +
-                    '<div class="created">总图书：' + category['books_count'] + ' 本</div>' +
+                    '<div class="created">创建者：' + $.htmlEncode(category['user']) + '</div>' +
+                    '<div class="created">总图书：' + category['books_count'] + ' 本' +
+                    '<a href="/categoryExcel?name=' + encodeURIComponent(categoryName) + '" style="margin-left: 10px;color: #5cacf7;"><i class="zmdi zmdi-download"></i> 下载</a>' +
+                    '</div>' +
                     '<div class="workers">贡献者（' + Object.keys(category['users']).length + '）：<span class="users-list"></span></div>' +
                     '<div class="updated-at">最新更新：' + $.dateFormat(category['updated_at'] * 1000) + '（' + $.timeAgo(category['updated_at']) + '）</div>' +
                     '<div class="updated-at">创建日期：' + $.dateFormat(category['created_at'] * 1000) + '（' + $.timeAgo(category['created_at']) + '）</div>' +
@@ -339,7 +341,7 @@ app.main.initCategoryList = function () {
 
                 for (var i in category['users']) {
                     var user = category['users'][i];
-                    var userName = $.trim(user['username']).length > 0 ? $.trim(user['username']) : '无名英雄';
+                    var userName = $.trim(user['username']).length > 0 ? $.htmlEncode($.trim(user['username'])) : '无名英雄';
                     $('<span class="user-item">' +
                         '<span class="username">' + userName + '</span>' +
                         '<span class="book-count">' + user['books_count'] + ' 本书</span>' +
@@ -347,7 +349,7 @@ app.main.initCategoryList = function () {
                         '</span>').appendTo(content.find('.users-list'));
                 }
 
-                app.dialog.build('类目 ' + categoryName, content);
+                app.dialog.build('类目 ' + $.htmlEncode(categoryName), content);
             });
 
             return itemElem;

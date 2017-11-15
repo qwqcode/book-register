@@ -317,7 +317,7 @@ class ApiController extends Controller
         $name = $request->get('name');
         $mode = $request->get('mode', '1');
         $allowMode = ['1', '2'];
-        if (!in_array($mode, $allowMode)) $mode = '1';
+        if (!in_array($mode, $allowMode)) $mode = '2';
         
         if (!empty($name)) {
             $categories = $categories->where(['name' => $name]);

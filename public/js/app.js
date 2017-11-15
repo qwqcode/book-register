@@ -799,32 +799,18 @@ app.danmaku = {
         // Send Broadcast Danmaku Btn
         var btnElem = $('<button class="danmaku-broadcast-send">发送弹幕</button>').appendTo('body');
         btnElem.click(function () {
-            app.danmaku.displaySendDialog();
-
-            /*var msg = prompt('(～￣▽￣)～ 输入弹幕内容（可选：#C#HEX=内容）：', '');
-            if (msg !== null && msg !== '') {
-                var mode = 1;
-                var color = '#FFFFFF';
-
-                if (msg.substring(0, 2) === '#C') {
-                    var arr = msg.substring(msg.indexOf('#C') + 2, msg.length).split('=');
-                    color = arr[0];
-                    msg = arr[1];
-                }
-
-                app.socket.broadcastDanmaku('说：' + msg, mode, color);
-            }*/
+            var dialogLayer = $('.danmaku-send-dialog-layer');
+            if (dialogLayer.length <= 0)
+                app.danmaku.displaySendDialog();
+            else
+                dialogLayer.remove();
         });
     },
 
     displaySendDialog: function () {
-        var layerClass = 'danmaku-send-dialog-layer';
+        if ($('.danmaku-send-dialog-layer').length !== 0) return;
 
-        if ($(layerClass).length !== 0)
-            $(layerClass).remove();
-
-        var dialogLayerElem = $('<div class="danmaku-send-dialog-layer anim-fade-in"></div>')
-            .appendTo('body');
+        var dialogLayerElem = $('<div class="danmaku-send-dialog-layer anim-fade-in"></div>').appendTo('body');
 
         var dialogElem = $(
             '<div class="danmaku-send-dialog">' +
@@ -839,10 +825,10 @@ app.danmaku = {
         ).appendTo(dialogLayerElem);
 
         dialogElem.find('.exit-btn').click(function () {
-            dialogElem.remove();
+            dialogLayerElem.remove();
         });
 
-        var colors = ['#FFFFFF', '#00CCFF', '#666FFF', '#66FFCC', '#FF99CC', '#FF3333'],
+        var colors = ['#FFFFFF', '#cfd8dc', '#000000', '#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722', '#795548', '#9e9e9e', '#607d8b'],
             selectedColor = colors[0];
         var formElem = dialogElem.find('.danmaku-send-form');
         var danmakuMsgInputElem = formElem.find('.danmaku-msg-input');
@@ -857,22 +843,17 @@ app.danmaku = {
             }
 
             var mode = 1;
-            var color = selectedColor;
-
-            if (msg.substring(0, 2) === '#C') {
-                var arr = msg.substring(msg.indexOf('#C') + 2, msg.length).split('=');
-                color = arr[0];
-                msg = arr[1];
-            }
-
-            app.socket.broadcastDanmaku('说：' + msg, mode, color);
+            app.socket.broadcastDanmaku('说：' + msg, mode, selectedColor);
             danmakuMsgInputElem.val('');
 
             return false;
         });
 
         var colorSelectorElem = dialogElem.find('.color-selector');
-        dialogElem.find('[data-toggle="showColorSelector"]').click(function () {
+        dialogElem.find('[data-toggle="showColorSelector"]').on('mousedown', function(e) {
+            e.preventDefault();
+        }).click(function () {
+            if (colorSelectorElem.hasClass('selector-show')) return;
             colorSelectorElem.addClass('selector-show');
             setTimeout(function () {
                 $(document).bind('click.for-selector-hide', function (e) {
@@ -881,8 +862,9 @@ app.danmaku = {
                         $(document).unbind('click.for-selector-hide');
                     }
                 });
-            }, 200);
+            }, 50);
         });
+
         var setColorBlockItemSelected = function (hex) {
             colorSelectorElem.children().removeClass('color-selected');
             colorSelectorElem.find('[data-color-hex=' + hex + ']').addClass('color-selected');
@@ -900,6 +882,7 @@ app.danmaku = {
                 })
                 .appendTo(colorSelectorElem);
         }
+
         setColorBlockItemSelected(colors[0]);
     },
 

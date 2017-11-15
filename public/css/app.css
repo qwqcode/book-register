@@ -926,6 +926,42 @@ a {
     left: 13px;
 }
 
+.editor .editor-book-list .list-content .list-item .item-actions {
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    height: 40px;
+    line-height: 40px;
+    padding: 0 15px;
+    margin-right: 5px;
+    z-index: 2;
+    background: #FFF;
+    transition: opacity .1s;
+}
+
+.editor .editor-book-list .list-content .list-item:hover .item-actions {
+    opacity: 1;
+    pointer-events: inherit;
+}
+
+.editor .editor-book-list .list-content .list-item .item-actions > span {
+    cursor: pointer;
+    user-select: none;
+    transition: .2s;
+    color: #78909c;
+    padding: 0 20px;
+    border-radius: 2px;
+    height: 30px;
+    line-height: 30px;
+    display: inline-block;
+}
+
+.editor .editor-book-list .list-content .list-item .item-actions > span:hover {
+    color: #2196F3;
+    background: #f7f7f7;
+}
+
 /* notify */
 .notify-layer {
     position: fixed;
@@ -1263,6 +1299,7 @@ a {
     position: absolute;
     text-decoration: none;
     text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    font-weight: bold;
     -webkit-text-size-adjust: none;
     -ms-text-size-adjust: none;
     text-size-adjust: none;
@@ -1271,6 +1308,7 @@ a {
     -webkit-transform-origin: 0% 0%;
     -ms-transform-origin: 0% 0%;
     transform-origin: 0% 0%;
+    transition: transform 0s linear;
     white-space: pre;
     word-break: keep-all;
 }
@@ -1285,23 +1323,27 @@ a {
 
 .danmaku-broadcast-send {
     position: fixed;
-    right: 10px;
-    bottom: 10px;
+    right: 30px;
+    bottom: 20px;
     outline: none;
-    border: none;
     cursor: pointer;
     background: #FFF;
-    padding: 10px 30px;
-    border-radius: 1px;
+    border: 1px solid transparent;
+    padding: 7px 0;
+    width: 120px;
+    border-radius: 25px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
-    color: #1DAAFF;
+    color: #535f6f;
     opacity: .8;
     transition: all .2s ease-in-out;
 }
 
 .danmaku-broadcast-send:hover {
     opacity: 1;
+    color: #1EAAFF;
+    border: 1px solid #1EAAFF;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+    transform: translate3d(0, -4px, 0);
 }
 
 /** Aliases for Chinese named fonts because they don't work on *nix **/
@@ -1390,6 +1432,7 @@ a {
     transition: .2s;
     cursor: pointer;
     user-select: none;
+    box-shadow: 1px 1px 3px #F4F4F4;
 }
 
 .danmaku-send-dialog .danmaku-send-form .danmaku-style-btn:hover {
@@ -1406,7 +1449,7 @@ a {
     font-size: 13px;
     color: #6b6b6b;
     outline: none;
-    margin-left: 5px;
+    margin-left: 20px;
 }
 
 .danmaku-send-dialog .danmaku-send-form .danmaku-send-btn {
@@ -1417,11 +1460,15 @@ a {
     cursor: pointer;
     text-align: center;
     border-radius: 2px;
-    background-color: #00a1d6;
-    border: 1px solid #00a1d6;
+    background-color: #1EAAFF;
+    border: 1px solid #1EAAFF;
     transition: .2s;
     transition-property: background-color,border,color;
     outline: none;
+}
+
+.danmaku-send-dialog .danmaku-send-form .danmaku-send-btn:hover {
+    background-color: #009dfd;
 }
 
 .danmaku-send-dialog .color-selector {
@@ -1430,9 +1477,9 @@ a {
 
 .danmaku-send-dialog .color-selector.selector-show {
     display: block;
-    margin-top: -3px;
-    padding: 12px 20px;
-    width: 282px;
+    margin-top: -5px;
+    padding: 25px 20px 12px 20px;
+    width: 330px;
     background: #FFF;
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
@@ -1452,6 +1499,7 @@ a {
     cursor: pointer;
     user-select: none;
     transition: .2s;
+    margin-bottom: 10px;
 }
 
 .danmaku-send-dialog .color-selector .color-block-item.color-selected {

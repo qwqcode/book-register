@@ -81,8 +81,26 @@ app.editor.work = function (rawCategoryObj, opts) {
         _work.exit = function () {
             // 保存当前图书
             _work.inserter.saveInputs();
+            _work.unbindHotkey();
             _work.hooks.onExit();
         };
+
+        // Hot keys
+        _work.bindHotkey = function () {
+            $(document).bind('keydown.editor_hotkey', function(e) {
+                // Ctrl + G
+                if (e.ctrlKey && e.keyCode === 71) {
+                    _work.inserter.numberingElem.focus();
+                    e.preventDefault();
+                }
+            });
+        };
+
+        _work.unbindHotkey = function () {
+            $(document).unbind('keydown.editor_hotkey');
+        };
+
+        _work.bindHotkey();
 
         // 跳转到指定 numbering 图书
         _work.redirectBook = function (numbering) {
@@ -170,6 +188,8 @@ app.editor.work = function (rawCategoryObj, opts) {
      * Toolbar
      */
     _work.toolbar = new (function toolbar() {
+        var toolbar = this;
+
         var toolbarElem = _editorElem.find('.editor-tool-bar');
 
         toolbarElem.find('.title').text('编辑 类目 ' + _categoryName);
@@ -186,6 +206,11 @@ app.editor.work = function (rawCategoryObj, opts) {
                 _work.refresh(true);
             });
         });
+
+        toolbar.refresh = function () {
+            toolbarElem.find('.local-data-count').text(app.editor.local.count());
+        };
+        toolbar.refresh();
     })();
 
     /**
@@ -195,7 +220,7 @@ app.editor.work = function (rawCategoryObj, opts) {
         var inserter = this;
         var inserterElem = _editorElem.find('.editor-inserter');
 
-        var numberingElem = inserterElem.find('.numbering');
+        var numberingElem = inserter.numberingElem = inserterElem.find('.numbering');
         var categoryNameElem = inserterElem.find('.category-name');
         var preBtnElem = inserterElem.find('.pre-book-btn');
         var nxtBtnElem = inserterElem.find('.nxt-book-btn');
@@ -226,6 +251,9 @@ app.editor.work = function (rawCategoryObj, opts) {
 
             // Book List Item Focus
             _work.bookList.focusItem(numbering);
+
+            // Refresh Toolbar
+            _work.toolbar.refresh();
         };
 
         (function numberingInput() {
@@ -462,6 +490,7 @@ app.editor.work = function (rawCategoryObj, opts) {
                 '<span class="book-name"></span>' +
                 '<span class="book-press"></span>' +
                 '<span class="book-remarks"></span>' +
+                '<div class="item-actions"><span data-action="copy">复制</span></div>' +
                 '</div>'
             );
 
@@ -469,6 +498,14 @@ app.editor.work = function (rawCategoryObj, opts) {
             itemElem.find('.book-name').text(bookName);
             itemElem.find('.book-press').text(bookPress);
             itemElem.find('.book-remarks').text(bookRemarks);
+
+            // Item Actions
+            var itemActions = itemElem.find('.item-actions');
+            itemActions.find('[data-action="copy"]').click(function () {
+                _work.inserter.setInputs(bookName, bookPress, bookRemarks);
+                _work.inserter.saveInputs();
+                _work.inserter.refresh();
+            });
 
             // whether is modified
             if (app.editor.local.isExist(_categoryName, numbering))
@@ -505,6 +542,12 @@ app.editor.work = function (rawCategoryObj, opts) {
             bookListContentElem.find('.edit-focused').removeClass('edit-focused');
             itemElem.addClass('edit-focused');
             bookList.scrollToItem(numbering);
+        };
+
+        bookList.setTag = function (numbering, tagName, isActive) {
+            var itemElem = bookList.getItemElem(numbering);
+            if (!itemElem) return;
+            // TODO: 整合单个项目的操作、指示...
         };
 
         bookList.scrollToItem = function (numbering) {
@@ -620,7 +663,7 @@ app.editor.local = {
         localStorage.removeItem(this._key);
     },
     count: function () {
-        var localData = this.get(), localDataCount = 0;
+        var localData = this.getAll(), localDataCount = 0;
         for (var i in localData) localDataCount += Object.keys(localData[i]).length;
         return localDataCount;
     }

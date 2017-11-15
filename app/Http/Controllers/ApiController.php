@@ -315,7 +315,7 @@ class ApiController extends Controller
         $categories = $this->tableCategory('`name` ASC');
         $datetime = date('Y-m-d His', time());
         $name = $request->get('name');
-        $mode = $request->get('mode', '1');
+        $mode = $request->get('mode', '2');
         $allowMode = ['1', '2'];
         if (!in_array($mode, $allowMode)) $mode = '2';
         

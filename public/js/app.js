@@ -874,12 +874,20 @@ app.danmaku = {
         var colorSelectorElem = dialogElem.find('.color-selector');
         dialogElem.find('[data-toggle="showColorSelector"]').click(function () {
             colorSelectorElem.addClass('selector-show');
+            setTimeout(function () {
+                $(document).bind('click.for-selector-hide', function (e) {
+                    if(!$(e.target).closest('.color-selector').length) {
+                        colorSelectorElem.removeClass('selector-show');
+                        $(document).unbind('click.for-selector-hide');
+                    }
+                });
+            }, 200);
         });
         var setColorBlockItemSelected = function (hex) {
             colorSelectorElem.children().removeClass('color-selected');
-            colorSelectorElem.find('[data-color-hex=' + hex + ']').addClass('.color-selected');
+            colorSelectorElem.find('[data-color-hex=' + hex + ']').addClass('color-selected');
         };
-        setColorBlockItemSelected(colors[0]);
+
         for (var i in colors) {
             if (!colors.hasOwnProperty(i)) continue;
             var colorHex = colors[i];
@@ -892,6 +900,7 @@ app.danmaku = {
                 })
                 .appendTo(colorSelectorElem);
         }
+        setColorBlockItemSelected(colors[0]);
     },
 
     make: function (message, mode, color) {

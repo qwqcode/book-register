@@ -54,7 +54,7 @@ php -S localhost:8000 -t public
 MIT
 
 # Author
-[ZNEIAT](https://github.com/Zneiat)
+[ZNEIAT](http://www.qwqaq.com)
 
 # Screenshots
 

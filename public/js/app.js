@@ -799,7 +799,9 @@ app.danmaku = {
         // Send Broadcast Danmaku Btn
         var btnElem = $('<button class="danmaku-broadcast-send">发送弹幕</button>').appendTo('body');
         btnElem.click(function () {
-            var msg = prompt('(～￣▽￣)～ 输入弹幕内容（可选：#C#HEX=内容）：', '');
+            app.danmaku.displaySendDialog();
+
+            /*var msg = prompt('(～￣▽￣)～ 输入弹幕内容（可选：#C#HEX=内容）：', '');
             if (msg !== null && msg !== '') {
                 var mode = 1;
                 var color = '#FFFFFF';
@@ -811,8 +813,85 @@ app.danmaku = {
                 }
 
                 app.socket.broadcastDanmaku('说：' + msg, mode, color);
-            }
+            }*/
         });
+    },
+
+    displaySendDialog: function () {
+        var layerClass = 'danmaku-send-dialog-layer';
+
+        if ($(layerClass).length !== 0)
+            $(layerClass).remove();
+
+        var dialogLayerElem = $('<div class="danmaku-send-dialog-layer anim-fade-in"></div>')
+            .appendTo('body');
+
+        var dialogElem = $(
+            '<div class="danmaku-send-dialog">' +
+            '<span class="zmdi zmdi-close exit-btn"></span>' +
+            '<form class="danmaku-send-form" onsubmit="return false;">' +
+            '<span data-toggle="showColorSelector" class="danmaku-style-btn zmdi zmdi-format-color-text"></span>' +
+            '<input class="danmaku-msg-input" type="text" placeholder="(～￣▽￣)～ 输入弹幕内容" autocomplete="off">' +
+            '<button type="submit" class="danmaku-send-btn">发送 &gt;</button>' +
+            '</form>' +
+            '<div class="color-selector"></div>' +
+            '</div>'
+        ).appendTo(dialogLayerElem);
+
+        dialogElem.find('.exit-btn').click(function () {
+            dialogElem.remove();
+        });
+
+        var colors = ['#FFFFFF', '#00CCFF', '#666FFF', '#66FFCC', '#FF99CC', '#FF3333'],
+            selectedColor = colors[0];
+        var formElem = dialogElem.find('.danmaku-send-form');
+        var danmakuMsgInputElem = formElem.find('.danmaku-msg-input');
+        danmakuMsgInputElem.focus();
+
+        formElem.submit(function () {
+            var msg = $.trim(danmakuMsgInputElem.val());
+            if (msg.length <= 0) {
+                app.notify.warning('弹幕内容不能为空哟');
+                danmakuMsgInputElem.focus();
+                return false;
+            }
+
+            var mode = 1;
+            var color = selectedColor;
+
+            if (msg.substring(0, 2) === '#C') {
+                var arr = msg.substring(msg.indexOf('#C') + 2, msg.length).split('=');
+                color = arr[0];
+                msg = arr[1];
+            }
+
+            app.socket.broadcastDanmaku('说：' + msg, mode, color);
+            danmakuMsgInputElem.val('');
+
+            return false;
+        });
+
+        var colorSelectorElem = dialogElem.find('.color-selector');
+        dialogElem.find('[data-toggle="showColorSelector"]').click(function () {
+            colorSelectorElem.addClass('selector-show');
+        });
+        var setColorBlockItemSelected = function (hex) {
+            colorSelectorElem.children().removeClass('color-selected');
+            colorSelectorElem.find('[data-color-hex=' + hex + ']').addClass('.color-selected');
+        };
+        setColorBlockItemSelected(colors[0]);
+        for (var i in colors) {
+            if (!colors.hasOwnProperty(i)) continue;
+            var colorHex = colors[i];
+            $('<div class="color-block-item" style="background-color: ' + colorHex + '" data-color-hex="' + colorHex + '"></div>')
+                .data('color-hex', colorHex)
+                .click(function () {
+                    var colorHex = $(this).attr('data-color-hex');
+                    selectedColor = colorHex;
+                    setColorBlockItemSelected(colorHex);
+                })
+                .appendTo(colorSelectorElem);
+        }
     },
 
     make: function (message, mode, color) {

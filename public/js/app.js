@@ -60,33 +60,89 @@ var app = {
  */
 app.router = {
     routes: [],
-    currentUrl: '',
-    register: function() {
+    currentPath: '',
+
+    register: function () {
         window.addEventListener('load', this.refresh.bind(this), false);
         window.addEventListener('hashchange', this.refresh.bind(this), false);
+        this.initRoutes();
+    },
 
-        app.router.route('/', function() {
-            console.log('主页');
+    initRoutes: function () {
+        app.router.addRoute('home', '/', function() {
+            var editor = app.editor.instance;
+            if (editor !== null) {
+                editor.exit();
+                console.log('返回首页');
+            }
         });
-        app.router.route('/category/:name', function(args) {
-            console.log(args[0]);
+
+        app.router.addRoute('category', '/category/:name', function(args) {
+            var categoryName = args['name'];
+            var editor = app.editor.instance;
+            if (editor !== null && editor.category.name !== categoryName) {
+                editor.exit();
+                console.log('退出类目' + editor.category.name);
+            }
+            app.main.categoryList.goToWork(categoryName);
+            console.log('进入类目页 ' + categoryName);
         });
     },
-    route: function(path, callback) {
+
+    addRoute: function (name, path, callback) {
+        var keys = [];
+
         this.routes.push({
-            path: new RegExp("^" + path.replace(/:[^\s/]+/g, '([\\w\\W]+)') + "$"),
+            path: (function (path, keys) {
+                path = path
+                    .concat('/?')
+                    .replace(/\/\(/g, '(?:/')
+                    .replace(/(\/)?(\.)?:(\w+)(?:(\(.*?\)))?(\?)?|\*/g, function(_, slash, format, key, capture, optional){
+                        if (_ === "*"){
+                            keys.push(undefined);
+                            return _;
+                        }
+
+                        keys.push(key);
+                        slash = slash || '';
+                        return ''
+                            + (optional ? '' : slash)
+                            + '(?:'
+                            + (optional ? slash : '')
+                            + (format || '') + (capture || '([^/]+?)') + ')'
+                            + (optional || '');
+                    })
+                    .replace(/([\/.])/g, '\\$1')
+                    .replace(/\*/g, '(.*)');
+                return new RegExp('^' + path + '$', 'i');
+            })(path, keys), // new RegExp("^" + path.replace(/:[^\s/]+/g, '([\\w\\W]+)') + "$")
+            argKeys: keys,
             action: callback
         });
     },
-    refresh: function() {
-        this.currentUrl = location.hash.slice(1) || '/';
+
+    redirect: function (path) {
+        if (path.slice(0, 1) !== '/')
+            path = '/' + path;
+
+        location.hash = '#' + path;
+    },
+
+    refresh: function () {
+        this.currentPath = decodeURIComponent(location.hash.slice(1)) || '/';
 
         for (var i = 0, l = this.routes.length; i < l; i++) {
-            var found = this.currentUrl.match(this.routes[i].path);
+            var routes = this.routes[i];
+            var found = this.currentPath.match(routes.path);
             if (found) {
-                /*console.log("module: " + this.routes[i].action);
+                /*console.log("module: " + routes.action);
                 console.log("args:", found.slice(1));*/
-                this.routes[i].action(found.slice(1));
+                var args = {};
+                var argsVals = found.slice(1);
+                for (var argsI = 0; argsI < routes.argKeys.length; argsI++) {
+                    args[routes.argKeys[argsI]] = argsVals[argsI];
+                }
+                this.routes[i].action(args);
                 break; // Ignore the rest of the paths
             }
         }
@@ -137,6 +193,8 @@ app.main = {
 
     show: function () {
         this._wrapElem.show();
+
+        app.router.redirect('/');
     },
 
     hide: function () {
@@ -621,6 +679,7 @@ app.api = {
 
         if (!app.data.categories.hasOwnProperty(categoryName)) {
             app.notify.error('找不到 ' + categoryName + ' 类 对象');
+            onError();
             return;
         }
 

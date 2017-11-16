@@ -23,6 +23,8 @@ app.editor = {
 
         app.main.hide();
         this._wrapElem.show();
+
+        app.router.redirect('/category/' + rawCategoryObj.name);
     },
 
     exitWork: function () {

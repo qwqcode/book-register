@@ -5,6 +5,7 @@ $(document).ready(function () {
     if (!app.checkRequirements())
         return;
 
+    app.router.register();
     app.data.register();
     app.main.register();
     app.editor.register();
@@ -50,6 +51,44 @@ var app = {
         },
         hide: function () {
             $(this._sel).hide();
+        }
+    }
+};
+
+/**
+ * Router
+ */
+app.router = {
+    routes: [],
+    currentUrl: '',
+    register: function() {
+        window.addEventListener('load', this.refresh.bind(this), false);
+        window.addEventListener('hashchange', this.refresh.bind(this), false);
+
+        app.router.route('/', function() {
+            console.log('主页');
+        });
+        app.router.route('/category/:name', function(args) {
+            console.log(args[0]);
+        });
+    },
+    route: function(path, callback) {
+        this.routes.push({
+            path: new RegExp("^" + path.replace(/:[^\s/]+/g, '([\\w\\W]+)') + "$"),
+            action: callback
+        });
+    },
+    refresh: function() {
+        this.currentUrl = location.hash.slice(1) || '/';
+
+        for (var i = 0, l = this.routes.length; i < l; i++) {
+            var found = this.currentUrl.match(this.routes[i].path);
+            if (found) {
+                /*console.log("module: " + this.routes[i].action);
+                console.log("args:", found.slice(1));*/
+                this.routes[i].action(found.slice(1));
+                break; // Ignore the rest of the paths
+            }
         }
     }
 };

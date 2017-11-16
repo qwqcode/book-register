@@ -47,9 +47,10 @@
                 <span class="left-part">
                     <div class="title">書記 Online</div>
                     <div class="user">
-                        <a class="username" data-toggle="user-logout"> $.htmlEncode(app.data.getUser() || 无名英雄) </a>
-                        <a class="book-count"></a>
-                        <a class="current-online">在线：加载中...</a>
+                        <a class="username" data-toggle="user-logout">无名英雄</a>
+                        <a class="book-count">战绩：-</a>
+                        <a class="today-count">今日：-</a>
+                        <a class="current-online">在线：-</a>
                     </div>
                 </span>
                 <span class="right-part">

@@ -260,14 +260,17 @@ app.main.initCategoryList = function () {
 
             (function updateUserInfo() {
                 var bookCountElem = _headElem.find('.user .book-count');
+                var todayCountElem = _headElem.find('.user .today-count');
 
                 var user = app.data.getUser();
                 if (!user) return;
 
                 _headElem.find('.user .username').text(user);
                 bookCountElem.text('战绩：加载中...');
+                todayCountElem.text('今日：加载中...');
                 app.api.getUser(user, function (data) {
-                    bookCountElem.text('战绩：' + data['book_total'] + ' 本书');
+                    bookCountElem.text('战绩：' + data['user_book_total'] + ' 本');
+                    todayCountElem.text('今日：' + data['user_book_today_total'] + ' / '+ data['site_book_today_total']);
                 }, function () {
                     bookCountElem.text('战绩：获取失败');
                 });

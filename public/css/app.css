@@ -337,11 +337,15 @@ a {
 }
 
 .main-category-list-head .user > .book-count:before {
-    content: '\f216';
+    content: '\f117';
 }
 
 .main-category-list-head .user > .current-online:before {
     content: '\f21c';
+}
+
+.main-category-list-head .user > .today-count:before {
+    content: '\f32e';
 }
 
 .main-category-list-head .right-part {

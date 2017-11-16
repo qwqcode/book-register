@@ -49,23 +49,32 @@ class ApiController extends Controller
         if (empty($user))
             return $this->error('参数 user 是必须的');
         
-        $categoryTotal = 0;
-        $bookTotal = 0;
+        $userCategoryTotal = $this->tableCategory()->where(['user' => $user])->count();
         
-        $categories = $this->tableCategory()->where(['user' => $user]);
-        if ($categories->exists()) {
-            $categoryTotal = $categories->count();
-        }
+        // 个人所有时间登记图书数
+        $userBookTotal = $this->tableBook()
+            ->where(['user' => $user])
+            ->where('name', '!=', '')
+            ->count();
+    
+        // 个人今日登记图书数
+        $userBookTodayTotal = $this->tableBook()
+            ->whereRaw('Date(created_at) = CURDATE()')
+            ->where(['user' => $user])
+            ->where('name', '!=', '')
+            ->count();
         
-        // Find books
-        $books = $this->tableBook()->where(['user' => $user])->where('name', '!=', '');
-        if ($books->exists()) {
-            $bookTotal = $books->count();
-        }
+        // 全站今日登记图书数
+        $siteBookTodayTotal = $this->tableBook()
+            ->whereRaw('Date(created_at) = CURDATE()')
+            ->where('name', '!=', '')
+            ->count();
         
         return $this->success('获取用户资料成功', [
-            'category_total' => $categoryTotal,
-            'book_total'     => $bookTotal,
+            'user_category_total'   => $userCategoryTotal,
+            'user_book_total'       => $userBookTotal,
+            'user_book_today_total' => $userBookTodayTotal,
+            'site_book_today_total' => $siteBookTodayTotal
         ]);
     }
     
@@ -78,7 +87,7 @@ class ApiController extends Controller
     {
         $userBookRanking = new Collection();
         $siteBookTotal = $this->tableBook()->count();
-        $siteCategoryTotal = $this->tableCategory()->get()->count();
+        $siteCategoryTotal = $this->tableCategory()->count();
         $userBooks = $this->tableBook('`category_name` ASC')->get()->groupBy('user')->all();
         foreach ($userBooks as $userName => $books) {
             $userBookCount = $books->count();

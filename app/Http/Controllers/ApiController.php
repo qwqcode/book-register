@@ -59,14 +59,14 @@ class ApiController extends Controller
     
         // 个人今日登记图书数
         $userBookTodayTotal = $this->tableBook()
-            ->whereRaw('Date(created_at) = CURDATE()')
+            ->whereRaw("Date(updated_at) = ?", date('Y-m-d'))
             ->where(['user' => $user])
             ->where('name', '!=', '')
             ->count();
         
         // 全站今日登记图书数
         $siteBookTodayTotal = $this->tableBook()
-            ->whereRaw('Date(created_at) = CURDATE()')
+            ->whereRaw("Date(updated_at) = ?", date('Y-m-d'))
             ->where('name', '!=', '')
             ->count();
         

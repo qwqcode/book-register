@@ -32,12 +32,16 @@
         <!-- Main Login -->
         <div class="main-login">
             <div class="main-login-head">
-                <div class="big-title"><span class="project-name">書記</span><span class="version-info">Online</span></div>
+                <a class="big-title" href="https://github.com/Zneiat/book-register" target="_blank">
+                    <span class="project-name">書記</span><span class="version-info">Online</span>
+                </a>
             </div>
             <form class="main-login-form" onsubmit="return false;">
                 <p class="input-hint">填入你的名字，成为一名名副其实的图书登记员吧！</p>
                 <input type="text" id="yourName" class="form-control" placeholder="Your Name ? 填入你的真实名字." autofocus autocomplete="off" />
-                <button class="login-submit">好的</button>
+                <div class="form-actions">
+                    <button class="login-submit">好的</button>
+                </div>
             </form>
         </div>
 
@@ -45,7 +49,7 @@
         <div class="main-category-list">
             <div class="main-category-list-head">
                 <span class="left-part">
-                    <div class="title">書記 Online</div>
+                    <div class="title"><span style="color: #0083ff;">書記</span> <span style="color: #718ab9;">Online</span></div>
                     <div class="user">
                         <a class="username" data-toggle="user-logout">无名英雄</a>
                         <a class="book-count">战绩：-</a>
@@ -55,13 +59,14 @@
                 </span>
                 <span class="right-part">
                     <span class="list-search">
+                        <i class="zmdi zmdi-search"></i>
                         <input type="text" class="form-control" placeholder="搜索类目..." autocomplete="off" spellcheck="false">
                     </span>
                     <span class="list-actions">
-                        <a data-toggle="refresh-data"><i class="zmdi zmdi-refresh"></i> 刷新列表</a>
-                        <a data-toggle="upload-books"><i class="zmdi zmdi-cloud-upload"></i> 上传图书</a>
-                        <a data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建类目</a>
-                        <a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 数据导出</a>
+                        <a data-toggle="refresh-data"><i class="zmdi zmdi-refresh"></i> 刷新</a>
+                        <a data-toggle="upload-books"><i class="zmdi zmdi-cloud-upload"></i> 上传</a>
+                        <a data-toggle="create-category"><i class="zmdi zmdi-plus"></i> 创建</a>
+                        <a href="/categoryExcel"><i class="zmdi zmdi-download"></i> 导出</a>
                     </span>
                 </span>
             </div>

@@ -79,11 +79,6 @@ app.router = {
 
         app.router.addRoute('category', '/category/:name', function(args) {
             var categoryName = args['name'];
-            var editor = app.editor.instance;
-            if (editor !== null && editor.category.name !== categoryName) {
-                editor.exit();
-                console.log('退出类目' + editor.category.name);
-            }
             app.main.categoryList.goToWork(categoryName);
             console.log('进入类目页 ' + categoryName);
         });
@@ -211,6 +206,8 @@ app.main = {
     },
 
     toggleLogin: function () {
+        app.router.redirect('/');
+
         this._elem.removeClass('large-size');
         this.login.setYourNameVal(app.data.getUser());
 
@@ -260,6 +257,12 @@ app.main.initCategoryList = function () {
     var _listContentElem = _listElem.find('.main-category-list-content');
 
     _categoryList.goToWork = function (categoryName) {
+        // 若已打开其他类目，先关闭
+        var editor = app.editor.instance;
+        if (editor !== null && editor.category.name !== categoryName) {
+            editor.exit();
+        }
+
         _categoryList.setLoading(true);
         app.api.getCategoryBooks(categoryName, function () {
             // 刷新类目列表
@@ -363,8 +366,8 @@ app.main.initCategoryList = function () {
                 if (!user) return;
 
                 _headElem.find('.user .username').text(user);
-                bookCountElem.text('战绩：加载中...');
-                todayCountElem.text('今日：加载中...');
+                bookCountElem.text('战绩：加载中');
+                todayCountElem.text('今日：加载中');
                 app.api.getUser(user, function (data) {
                     bookCountElem.text('战绩：' + data['user_book_total'] + ' 本');
                     todayCountElem.text('今日：' + data['user_book_today_total'] + ' / '+ data['site_book_today_total']);
@@ -423,7 +426,7 @@ app.main.initCategoryList = function () {
             );
 
             itemElem.find('.item-head').click(function () {
-                _categoryList.goToWork(categoryName);
+                app.router.redirect('/category/' + categoryName);
             });
 
             itemElem.find('.item-meta > a').click(function showCategoryInfo() {
@@ -535,7 +538,7 @@ app.main.createCategoryDialog = function () {
                     if (app.data.categories.hasOwnProperty(categoryName)) {
                         // 是否现在打开类目？
                         app.dialog.build('进入类目', '类目 ' + $.htmlEncode(categoryName) + ' 可以进入了！要现在进入吗？', ['要', function () {
-                            app.main.categoryList.goToWork(categoryName);
+                            app.router.redirect('/category/' + categoryName);
                         }], ['不要', null]);
                     }
                 });

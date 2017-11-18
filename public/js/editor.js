@@ -18,13 +18,18 @@ app.editor = {
 
         var instance = this.instance = new this.work(rawCategoryObj, opts);
         instance.hooks.onExit = function () {
+            if (app.editor.local.count() > 0) {
+                app.notify.warning('别忘了，您还有数据未上传 ヾ(ﾟ∀ﾟゞ)');
+            }
+
+            return true;
+        };
+        instance.hooks.afterExit = function () {
             app.editor.exitWork();
         };
 
         app.main.hide();
         this._wrapElem.show();
-
-        app.router.redirect('/category/' + rawCategoryObj.name);
     },
 
     exitWork: function () {
@@ -83,8 +88,10 @@ app.editor.work = function (rawCategoryObj, opts) {
         _work.exit = function () {
             // 保存当前图书
             _work.inserter.saveInputs();
-            _work.unbindHotkey();
-            _work.hooks.onExit();
+            if (_work.hooks.onExit()) {
+                _work.unbindHotkey();
+                _work.hooks.afterExit();
+            }
         };
 
         // Hot keys
@@ -570,7 +577,8 @@ app.editor.work = function (rawCategoryObj, opts) {
      * Hooks
      */
     _work.hooks = new (function initHooks() {
-        this.onExit = function () {};
+        this.onExit = function () { return true; };
+        this.afterExit = function () {};
     })();
 
     _work.refresh();

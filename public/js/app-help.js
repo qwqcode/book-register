@@ -47,8 +47,9 @@ appHelp.editor = {
     register: function() {},
     show: function () {
         var layer = appHelp.newHelpLayer();
-        layer.addNote($('.editor .editor-inserter .numbering'), '快速跳转 到指定图书<br/><br/>点击并输入 编号，按回车键，跳到 指定图书。<br/><br/>栗子：登记 Z321，但列表里没有，在这里输入 321 回车即可。无需多次点下一本书按钮');
-        layer.addNote($('.editor .editor-inserter input[name="press"]'), '键盘快捷键<br/><br/>Tab 填下一个框<br/>Enter 下一本书<br/>Ctrl + G 快速跳转');
-        layer.addNote($('.editor .editor-inserter .nxt-book-btn'), '下一本书 按钮<br/><br/>点击这里，登记下一本书');
+        layer.addNote($('.editor .editor-tool-bar .action-item'), '任务完成后，别忘了上传图书哟<br/>(～￣▽￣)～');
+        layer.addNote($('.editor .editor-inserter .numbering'), '编号 快速跳转（Ctrl + G）<br/><br/>填入 编号，敲击 回车键<br/><br/>例：需登记 Z321，但表里没有，无需多次点下一本书按钮，在此输入 321 后，敲击回车键即可<br/><br/>您还可以点击 表中的编号 进行跳转');
+        layer.addNote($('.editor .editor-inserter input[name="press"]'), '敲击 Tab 填 下一个 框<br/>敲击 Enter 录 下一本 书');
+        layer.addNote($('.editor .editor-inserter .nxt-book-btn'), '点这里，登记下一本书');
     }
 };

@@ -78,7 +78,7 @@ app.router = {
         });
 
         app.router.addRoute('category', '/category/:name', function(args) {
-            var categoryName = args['name'];
+            var categoryName = decodeURIComponent(args['name']);
             app.main.categoryList.goToWork(categoryName);
             console.log('进入类目页 ' + categoryName);
         });
@@ -124,7 +124,7 @@ app.router = {
     },
 
     refresh: function () {
-        this.currentPath = decodeURIComponent(location.hash.slice(1)) || '/';
+        this.currentPath = location.hash.slice(1) || '/';
 
         for (var i = 0, l = this.routes.length; i < l; i++) {
             var routes = this.routes[i];
@@ -419,7 +419,7 @@ app.main.initCategoryList = function () {
             );
 
             itemElem.find('.item-head').click(function () {
-                app.router.redirect('/category/' + categoryName);
+                app.router.redirect('/category/' + encodeURIComponent(categoryName));
             });
 
             itemElem.find('.item-meta > a').click(function showCategoryInfo() {
@@ -531,7 +531,7 @@ app.main.createCategoryDialog = function () {
                     if (app.data.categories.hasOwnProperty(categoryName)) {
                         // 是否现在打开类目？
                         app.dialog.build('进入类目', '类目 ' + $.htmlEncode(categoryName) + ' 可以进入了！要现在进入吗？', ['要', function () {
-                            app.router.redirect('/category/' + categoryName);
+                            app.router.redirect('/category/' + encodeURIComponent(categoryName));
 
                             return true;
                         }], ['不要', null]);

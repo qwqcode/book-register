@@ -384,20 +384,12 @@ app.main.initCategoryList = function () {
 
             _listContentElem.html('');
 
-            // 我负责的
-            var filterAppend = function (getMine) {
-                for (var categoryName in categories) {
-                    if (!categories.hasOwnProperty(categoryName)) continue;
-                    var item = categories[categoryName];
-                    if (getMine && !item.isMine()) continue;
-                    if (!getMine && item.isMine()) continue;
-                    _categoryList.itemRender(categoryName, item)
-                        .appendTo(_listContentElem);
-                }
-            };
-
-            filterAppend(true); // 我负责的类目添加到列表
-            filterAppend(false); // 非我负责的
+            for (var categoryName in categories) {
+                if (!categories.hasOwnProperty(categoryName)) continue;
+                var item = categories[categoryName];
+                _categoryList.itemRender(categoryName, item)
+                    .appendTo(_listContentElem);
+            }
 
             //_listContentElem.scrollTop(0); // 滚动归零
         };

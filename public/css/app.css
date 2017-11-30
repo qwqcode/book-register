@@ -84,7 +84,7 @@ a {
     position: fixed;
     top: 0;
     left: 0;
-    background: #f3f3f3;
+    background: rgba(220, 220, 220, 0.35);
     z-index: 999999999;
     align-items: center;
     justify-content: center;
@@ -95,15 +95,15 @@ a {
 .loading-layer-text {
     display: flex;
     margin-top: 25px;
-    color: #737373;
     font-size: 16px;
     text-align: center;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 }
 
 .loading-spinner {
     position: relative;
     width: 50px;
-    height: 50px
+    height: 50px;
 }
 
 .loading-spinner svg {
@@ -1407,16 +1407,29 @@ a {
     text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;
 }
 
-.danmaku-broadcast-send {
+.danmaku-control-btns {
     position: fixed;
     right: 30px;
     bottom: 20px;
+    display: block;
+    width: 120px;
+}
+
+.danmaku-control-btns > .danmaku-btn {
+    display: block;
+}
+
+.danmaku-control-btns > .danmaku-btn:not(:last-child) {
+    margin-bottom: 10px;
+}
+
+.danmaku-control-btns .danmaku-btn {
     outline: none;
     cursor: pointer;
     background: #FFF;
     border: 1px solid transparent;
     padding: 7px 0;
-    width: 120px;
+    width: 100%;
     border-radius: 25px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
     color: #535f6f;
@@ -1424,12 +1437,25 @@ a {
     transition: all .2s ease-in-out;
 }
 
-.danmaku-broadcast-send:hover {
+.danmaku-control-btns .danmaku-btn:hover {
     opacity: 1;
     color: #1EAAFF;
     border: 1px solid #1EAAFF;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
     transform: translate3d(0, -4px, 0);
+}
+
+.danmaku-control-btns .danmaku-btn.current-online {
+    padding: 7px 15px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.danmaku-control-btns .danmaku-btn.current-online > i {
+    color: #0083ff;
+    font-style: normal;
+    margin-right: 4px;
 }
 
 /** Aliases for Chinese named fonts because they don't work on *nix **/

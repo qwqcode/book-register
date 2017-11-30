@@ -209,6 +209,7 @@ app.main = {
 
         // keep last
         app.socket.connect();
+        app.danmaku.controlBtnsElem.show();
 
         this.checkUpload();
     },
@@ -220,6 +221,7 @@ app.main = {
         this.login.setYourNameVal(app.data.getUser());
 
         app.socket.close();
+        app.danmaku.controlBtnsElem.hide();
     },
 
     isToggledLogin: function () {
@@ -303,7 +305,6 @@ app.main.initCategoryList = function () {
 
     (function headPart() {
         var onlineUsersInfoElem = $('<div></div>');
-        window.onlineUsersInfoElem = onlineUsersInfoElem;
 
         // User Logout
         _headElem.find('[data-toggle="user-logout"]').click(function () {
@@ -355,13 +356,18 @@ app.main.initCategoryList = function () {
         });
 
         // Current Online
-        _headElem.find('.current-online').click(function () {
+        _categoryList.showCurrentOnlineDialog = function () {
             app.dialog.build('在线成员', onlineUsersInfoElem);
+        };
+
+        _headElem.find('.current-online').click(function () {
+            _categoryList.showCurrentOnlineDialog();
         });
 
         _categoryList.setHeadOnline = function (num, str) {
             _headElem.find('.current-online').text('在线：' + num);
             onlineUsersInfoElem.text(str);
+            app.danmaku.onlineCountElem.text(num);
         };
     })();
 
@@ -998,6 +1004,9 @@ app.socket = {
     transition: -webkit-transform 0s linear;
  */
 app.danmaku = {
+    controlBtnsElem: $(),
+    onlineCountElem: $(),
+
     register: function () {
         // Comment Manager
         var elem = $('<div class="danmaku-layer-wrap"><div class="danmaku-layer"></div></div>').appendTo('body');
@@ -1006,15 +1015,27 @@ app.danmaku = {
         cm.start(); // 启用弹幕播放
         window.CM = cm;
 
+        var controlBtnsElem = this.controlBtnsElem =  $('<div class="danmaku-control-btns"></div>').appendTo('body');
+        controlBtnsElem.hide();
+
         // Send Broadcast Danmaku Btn
-        var btnElem = $('<button class="danmaku-broadcast-send">发送弹幕</button>').appendTo('body');
-        btnElem.click(function () {
+        var sendBtnElem = $('<button class="danmaku-btn">发送弹幕</button>')
+            .appendTo(controlBtnsElem);
+        sendBtnElem.click(function () {
             var dialogLayer = $('.danmaku-send-dialog-layer');
             if (dialogLayer.length <= 0)
                 app.danmaku.displaySendDialog();
             else
                 dialogLayer.remove();
         });
+
+        var currentOnlineBtn = $('<button class="danmaku-btn current-online">' +
+            '<i class="zmdi zmdi-cloud-outline-alt"></i> <span id="onlineCount">0</span></button>')
+            .appendTo(controlBtnsElem);
+        this.onlineCountElem = currentOnlineBtn.find('#onlineCount');
+        currentOnlineBtn.click(function () {
+            app.main.categoryList.showCurrentOnlineDialog();
+        })
     },
 
     displaySendDialog: function () {

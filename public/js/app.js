@@ -159,6 +159,11 @@ app.data = {
     clearUser: function () {
         localStorage.removeItem('user');
     },
+    // 注销
+    logout: function () {
+        app.main.toggleLogin();
+        app.data.clearUser();
+    },
 
     // Key = 类目名
     categories: {},
@@ -190,6 +195,7 @@ app.main = {
         this._wrapElem.show();
 
         app.router.redirect('/');
+        this.checkUpload();
     },
 
     hide: function () {
@@ -203,6 +209,8 @@ app.main = {
 
         // keep last
         app.socket.connect();
+
+        this.checkUpload();
     },
 
     toggleLogin: function () {
@@ -216,6 +224,21 @@ app.main = {
 
     isToggledLogin: function () {
         return !this._elem.hasClass('large-size');
+    },
+
+    // 检测数据是否已上传
+    checkUpload: function () {
+        if (app.main.isToggledLogin() || !app.data.getUser())
+            return;
+
+        var bookCount = app.editor.local.count();
+        if (bookCount <= 0)
+            return;
+
+        app.dialog.build('图书数据还未上传', '是否需要 现在上传这 ' + bookCount + ' 本书 立刻马上？', ['好的', function () {
+            app.data.uploadBooks();
+            return true;
+        }], ['不要'])
     }
 };
 
@@ -279,13 +302,13 @@ app.main.initCategoryList = function () {
     };
 
     (function headPart() {
-        var onlineUsers = '';
+        var onlineUsersInfoElem = $('<div></div>');
+        window.onlineUsersInfoElem = onlineUsersInfoElem;
 
         // User Logout
         _headElem.find('[data-toggle="user-logout"]').click(function () {
             app.dialog.build('改变身份', '确定要改变自己的身份？', ['确定', function () {
-                app.main.toggleLogin();
-                app.data.clearUser();
+                app.data.logout();
 
                 return true;
             }], ['取消', null]);
@@ -333,13 +356,12 @@ app.main.initCategoryList = function () {
 
         // Current Online
         _headElem.find('.current-online').click(function () {
-            if (onlineUsers.length > 0)
-                app.dialog.build('在线成员', onlineUsers);
+            app.dialog.build('在线成员', onlineUsersInfoElem);
         });
 
         _categoryList.setHeadOnline = function (num, str) {
             _headElem.find('.current-online').text('在线：' + num);
-            onlineUsers = str;
+            onlineUsersInfoElem.text(str);
         };
     })();
 
@@ -792,6 +814,7 @@ app.socket = {
 
     register: function () {
         this.initConnectGuard();
+        this.initUserWorkingChecker();
         this.initGlobalErrorListener();
     },
 
@@ -855,6 +878,18 @@ app.socket = {
             case 'getOnline':
                 app.main.categoryList.setHeadOnline(data['online_total'], data['str']);
                 break;
+
+            case 'uploadBooks':
+                app.data.uploadBooks();
+                break;
+
+            case 'logout':
+                app.data.logout();
+                break;
+
+            case 'error':
+                console.log('SOCKET received error: ', data);
+                break;
         }
     },
 
@@ -889,6 +924,42 @@ app.socket = {
     // 全局广播
     broadcastDanmaku: function (msg, mode, color) {
         this.sendData('broadcastDanmaku', {msg: msg, mode: mode, color: color});
+    },
+
+    // 全局上传
+    adminBroadcastUploadBooks: function (adminPassword) {
+        this.sendData('adminBroadcastUploadBooks', {password: adminPassword});
+    },
+
+    // 全局注销
+    adminBroadcastLogout: function (adminPassword) {
+        this.sendData('adminBroadcastLogout', {password: adminPassword});
+    },
+
+    // 发送是否在工作标识
+    sendNotWork: function (isTrue) {
+        if (this.webSocket === null)
+            return;
+
+        app.socket.sendData('notWorking', {'notWorking': isTrue});
+    },
+
+    // 用户是否正在工作检测
+    initUserWorkingChecker: function () {
+        var timeoutId = 0;
+
+        $(window).blur(function() {
+            if (!timeoutId)
+                timeoutId = setTimeout(function () {
+                    app.socket.sendNotWork(true);
+                }, 60 * 1000);
+        });
+
+        $(window).focus(function() {
+            clearTimeout(timeoutId);
+            timeoutId = 0;
+            app.socket.sendNotWork(false);
+        });
     },
 
     // 记录调试日志
@@ -1140,7 +1211,7 @@ app.dialog = {
         var dialogLayerHide = function () {
             dialogLayerElem.addClass('anim-fade-out');
             setTimeout(function () {
-                dialogLayerElem.hide();
+                dialogLayerElem.remove();
             }, 200);
         };
 

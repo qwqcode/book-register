@@ -6,6 +6,9 @@ var conf = {
     port: 51230 // 监听端口
 };
 
+// 管理员密码
+var adminPassword = '1234567890';
+
 // 实例化
 var wss = new ws.Server(conf);
 
@@ -46,6 +49,7 @@ wss.on('connection', function (ws, req) {
     var wsKey = req.headers['sec-websocket-key'];
     var ipAddr = req.connection.remoteAddress;
     var username = '无名英雄';
+    var iAmNotWorking = false;
 
     // Log
     var getUserLogStr = function (msg) {
@@ -64,7 +68,7 @@ wss.on('connection', function (ws, req) {
         switch (data['type']) {
             case 'register':
                 username = data['user'];
-                users[wsKey] = username;
+                users[wsKey] = {username: username, isNotWorking: false};
                 // MSG
                 userLog('注册成功 USERNAME=' + username);
                 broadcast(danmaku('[系统] 成员 ' + username + ' 上线了', 2));
@@ -75,11 +79,11 @@ wss.on('connection', function (ws, req) {
                 (function () {
                     for (var key in users) {
                         if (users.hasOwnProperty(key))
-                            onlineStr.push(users[key]);
+                            onlineStr.push(users[key].username + (users[key].isNotWorking ? ' [不活跃]' : ''));
                     }
                 })();
                 var userCount = Object.keys(users).length;
-                broadcast({
+                send({
                     type: 'getOnline',
                     online_total: userCount,
                     online_users: users,
@@ -89,6 +93,15 @@ wss.on('connection', function (ws, req) {
 
             case 'broadcastDanmaku':
                 broadcast(danmaku('[' + username  + '] ' + data['msg'], data['mode'], data['color']));
+                break;
+
+            case 'notWorking':
+                if (!data.hasOwnProperty('notWorking') ||  typeof data.notWorking !== 'boolean')
+                    break;
+
+                iAmNotWorking = data.notWorking;
+                users[wsKey].isNotWorking = iAmNotWorking;
+
                 break;
 
             case 'logFrontendError':
@@ -107,8 +120,26 @@ wss.on('connection', function (ws, req) {
                 });
                 break;
 
+            case 'adminBroadcastUploadBooks':
+                if (data.password !== adminPassword) {
+                    send({type: 'error', error: '无权访问'});
+                    break;
+                }
+
+                broadcast({type: 'uploadBooks'});
+                break;
+
+            case 'adminBroadcastLogout':
+                if (data.password !== adminPassword) {
+                    send({type: 'error', error: '无权访问'});
+                    break;
+                }
+
+                broadcast({type: 'logout'});
+                break;
+
             default:
-                send({'error': '(ÒωÓױ)！不明的请求参数'});
+                send({type: 'error', error: '(ÒωÓױ)！不明的请求参数'});
                 return;
         }
     };

@@ -18,10 +18,6 @@ app.editor = {
 
         var instance = this.instance = new this.work(rawCategoryObj, opts);
         instance.hooks.onExit = function () {
-            if (app.editor.local.count() > 0) {
-                app.notify.warning('别忘了，您还有数据未上传 ヾ(ﾟ∀ﾟゞ)');
-            }
-
             return true;
         };
         instance.hooks.afterExit = function () {

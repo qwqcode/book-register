@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
-use App\Models\Category;
+use App\Book;
+use App\Category;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Laravel\Lumen\Routing\Controller as BaseController;
@@ -73,7 +73,7 @@ class Controller extends BaseController
      * 数据表 - 类目
      *
      * @param $orderBy
-     * @return \Illuminate\Database\Query\Builder|\App\Models\Category
+     * @return \Illuminate\Database\Query\Builder|\App\Category
      */
     protected function tableCategory($orderBy = '`created_at` DESC')
     {
@@ -84,7 +84,7 @@ class Controller extends BaseController
      * 数据表 - 类目中的图书
      *
      * @param $orderBy
-     * @return \Illuminate\Database\Eloquent\Builder|\App\Models\Book
+     * @return \Illuminate\Database\Eloquent\Builder|\App\Book
      */
     protected function tableBook($orderBy = '`created_at` DESC')
     {

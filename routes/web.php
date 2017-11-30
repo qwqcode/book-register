@@ -24,3 +24,5 @@ $router->get('/getCategory', 'ApiController@getCategory');
 $router->post('/uploadCategory', 'ApiController@uploadCategory');
 $router->get('/categoryCreate', 'ApiController@categoryCreate');
 $router->get('/categoryExcel', 'ApiController@categoryExcel');
+
+$router->post('/adminUpdateCategory', 'ApiController@adminUpdateCategory');

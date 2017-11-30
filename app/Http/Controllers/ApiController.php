@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
-use App\Models\Category;
+use App\Book;
+use App\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -149,6 +149,7 @@ class ApiController extends Controller
                 'user'              => $item->user,
                 'users'             => $users,
                 'remarks'           => $item->remarks,
+                'isDone'            => $item->isDone,
                 'books_count'       => $booksCount,
                 'updated_at'        => $item->updated_at->timestamp ?? 0,
                 'created_at'        => $item->created_at->timestamp ?? 0,
@@ -244,8 +245,11 @@ class ApiController extends Controller
                     'name' => $categoryName,
                 ]);
                 
-                if (!$category->exists())
-                    throw new \Exception('类目 "' . $categoryName . '" 未找到');
+                if (!$category->exists()) {
+                    Log::error($user . ' 的数据未导入数据库 ' . json_encode([$categoryName => $arr]));
+                    // throw new \Exception('类目 "' . $categoryName . '" 未找到');
+                    continue;
+                }
                 
                 foreach ($arr as $numbring => $bookItem) {
                     // Key 即是 Numbring
@@ -283,7 +287,6 @@ class ApiController extends Controller
     {
         $user = trim($request->get('user'));
         $name = trim($request->get('name'));
-        $time = \Carbon\Carbon::now()->toDateTimeString();
         
         if (empty($user))
             return $this->error('参数 user 是必须的');
@@ -299,15 +302,12 @@ class ApiController extends Controller
             return $this->success('同名类目已存在，无需再次创建', ['categoryExist' => true, 'categoryName' => $name]);
         
         // 若类目不存在 则创建一个
-        $insert = $this->tableCategory()->insert([
-            'name'       => $name,
-            'user'       => $user,
-            'remarks'    => '',
-            'created_at' => $time,
-            'updated_at' => $time,
-        ]);
+        $category = new Category();
+        $category->name = $name;
+        $category->user = $user;
+        $category->remarks = '';
         
-        if ($insert)
+        if ($category->save())
             return $this->success('类目创建成功', ['categoryExist' => false, 'categoryName' => $name]);
         
         return $this->error('类目创建失败');
@@ -410,5 +410,36 @@ class ApiController extends Controller
                 
             });
         })->export('xls');
+    }
+    
+    /**
+     * 管理员修改类目
+     *
+     * @inheritdoc
+     */
+    public function adminUpdateCategory(Request $request)
+    {
+        $reqPassword = $request->post('password');
+        $adminPassword = env('ADMIN_PASSWORD', '87654321');
+        
+        if ($reqPassword !== $adminPassword)
+            return $this->error('无权访问');
+        
+        $name = $request->post('name');
+        $values = json_decode($request->post('data'), true);
+        if (empty($name) || json_last_error() !== JSON_ERROR_NONE)
+            return $this->error('参数无效');
+        
+        $category = (new Category)->where(['name' => $name]);
+        if (!$category->exists())
+            return $this->error('类目' . $name . ' 不存在');
+    
+        if (empty($values))
+            return $this->success('未做任何修改');
+        
+        if ($category->update($values))
+            return $this->success('类目' . $name . ' 修改成功');
+        
+        return $this->error('类目' . $name . ' 修改失败');
     }
 }

@@ -20,6 +20,8 @@ class CreateBookTable extends Migration
             $table->string('press');
             $table->string('remarks');
             $table->string('user');
+            $table->integer('status')->unsigned();
+            $table->integer('type')->unsigned();
             $table->timestamps();
         });
     }

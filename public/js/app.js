@@ -401,8 +401,7 @@ app.main.initCategoryList = function () {
 
             var itemElem = $(
                 '<div class="item col-sm-6 col-md-3' + (category.isMine() ? ' is-mine' : '') +
-                (String(category['remarks']).indexOf('已完成') >= 0 ? ' is-completed' : '') +
-                '">' +
+                (!!category['isDone'] ? ' is-completed' : '') + '">' +
                 '<div class="item-inner">' +
 
                 '<div class="item-head">' +
@@ -760,6 +759,24 @@ app.api = {
                 onError();
             }
         });
+    },
+
+    adminUpdateCategory: function (password, categoryName, data) {
+        $.ajax({
+            url: '/adminUpdateCategory', method: 'POST', data: {
+                password: password,
+                name: categoryName,
+                data: JSON.stringify(data)
+            }, success: function (data) {
+                console.log(data);
+                var resp = app.api.responseHandle(data);
+                data = resp.checkGetData();
+                if (!!data) {}
+            }, error: function () {
+                app.notify.error('网络错误，类目无法修改');
+                onError();
+            }
+        });
     }
 };
 
@@ -767,7 +784,11 @@ app.socket = {
     url: 'ws://' + document.domain + ':51230',
 
     webSocket: null,
+
     allowReceiveMsgDanmaku: true,
+
+    debugLogEnable: false,
+    debugLogs: [],
 
     register: function () {
         this.initConnectGuard();
@@ -872,7 +893,17 @@ app.socket = {
 
     // 记录调试日志
     debugLog: function (msg) {
-        console.log('[app.socket] ' + msg);
+        if (!this.debugLogEnable)
+            return;
+
+        this.debugLogs.push({time: new Date().toString(), msg: msg});
+    },
+
+    setDebugLogEnable: function (value) {
+        if (value === undefined)
+            this.debugLogEnable = true;
+        else if (value !== undefined)
+            this.debugLogEnable = value;
     },
 
     // 初始化监听全局程序错误

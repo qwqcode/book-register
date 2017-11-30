@@ -1265,6 +1265,7 @@ a {
 .dialog-layer .dialog-content .danmaku-settings .action-btn:not(:last-child) {}
 
 .dialog-layer .dialog-content .danmaku-settings .action-btn > i {
+    color: #0083ff;
     margin-right: 15px;
 }
 

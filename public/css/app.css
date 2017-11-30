@@ -14,6 +14,18 @@ a {
     transition: all .2s ease-in-out;
 }
 
+.form-control {
+    border-top: transparent;
+    border-right: transparent;
+    border-left: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.form-control:focus {
+    box-shadow: none;
+}
+
 /* anim */
 .anim-fade-in {
     -webkit-animation-name: fadeIn;
@@ -238,7 +250,8 @@ a {
     color: #0083ff;
     text-align: center;
     font-size: 15px;
-    padding: 20px 12px;
+    padding: 0 12px;
+    height: 38px;
 }
 
 .main-login-form .form-control:focus {
@@ -887,6 +900,7 @@ a {
     width: 100%;
     overflow-y: scroll;
     overflow-x: hidden;
+    -webkit-transform: translateZ(0);
 }
 
 .editor .editor-book-list .list-content {}
@@ -1107,6 +1121,18 @@ a {
     word-break: break-all;
 }
 
+.dialog-layer .dialog-content .dialog-inputs {}
+
+.dialog-layer .dialog-content .dialog-inputs-msg {padding: 0 12px;}
+
+.dialog-layer .dialog-content .dialog-inputs-wrap {
+    margin-top: 16px;
+}
+
+.dialog-layer .dialog-content .dialog-inputs-wrap > .form-control:not(:last-child) {
+    margin-bottom: 20px;
+}
+
 .dialog-layer .dialog-bottom {
     display: flex;
     padding: 15px 25px 0 25px;
@@ -1171,7 +1197,7 @@ a {
 }
 
 .dialog-layer .dialog-ranking .site-total > i {
-    color: #03A9F4;
+    color: #14e48b;
     margin-right: 10px;
 }
 
@@ -1193,15 +1219,23 @@ a {
 }
 
 .dialog-layer .dialog-ranking .book-ranking .book-ranking-item[data-number="1"] {
-    color: #03A9F4;
+    color: #0083ff;
 }
 
 .dialog-layer .dialog-ranking .book-ranking .book-ranking-item[data-number="2"] {
-    color: #03A9F4;
+    color: #0083ff;
 }
 
 .dialog-layer .dialog-ranking .book-ranking .book-ranking-item[data-number="3"] {
-    color: #03A9F4;
+    color: #0083ff;
+}
+
+.dialog-layer .dialog-ranking .book-ranking .book-ranking-item[data-number="4"] {
+    color: #0083ff;
+}
+
+.dialog-layer .dialog-ranking .book-ranking .book-ranking-item[data-number="5"] {
+    color: #0083ff;
 }
 
 .dialog-layer .dialog-ranking .book-ranking .book-ranking-item > span.number {
@@ -1211,6 +1245,29 @@ a {
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+
+.dialog-layer .dialog-content .danmaku-settings {}
+
+.dialog-layer .dialog-content .danmaku-settings .setting-actions {
+    user-select: none;
+    cursor: pointer;
+    transition: all .2s ease-in-out;
+}
+
+.dialog-layer .dialog-content .danmaku-settings .setting-actions:hover {
+    color: #0083ff;
+}
+
+.dialog-layer .dialog-content .danmaku-settings .action-btn {
+    display: block;
+}
+
+.dialog-layer .dialog-content .danmaku-settings .action-btn:not(:last-child) {}
+
+.dialog-layer .dialog-content .danmaku-settings .action-btn > i {
+    margin-right: 15px;
+}
+
 
 /* help-layer */
 .help-layer-wrap {
@@ -1452,7 +1509,7 @@ a {
     border: 1px solid #efefef;
 }
 
-.danmaku-send-dialog .danmaku-send-form .danmaku-style-btn {
+.danmaku-send-dialog .danmaku-send-form .danmaku-aciton-btn {
     height: 50px;
     line-height: 50px;
     text-align: center;
@@ -1463,7 +1520,7 @@ a {
     box-shadow: 1px 1px 3px #F4F4F4;
 }
 
-.danmaku-send-dialog .danmaku-send-form .danmaku-style-btn:hover {
+.danmaku-send-dialog .danmaku-send-form .danmaku-aciton-btn:hover {
     color: #00a1d6;
 }
 

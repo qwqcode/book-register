@@ -115,7 +115,7 @@ class ApiController extends Controller
         $name = trim($request->get('name'));
         $withBooks = trim($request->get('withBooks'));
         
-        $categoriesTable = $this->tableCategory('`name` ASC');
+        $categoriesTable = $this->tableCategory(); // '`name` ASC'
         
         if (!empty($name)) {
             $categories = $categoriesTable->where(['name' => $name]);

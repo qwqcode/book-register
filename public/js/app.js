@@ -286,6 +286,8 @@ app.main.initCategoryList = function () {
             app.dialog.build('改变身份', '确定要改变自己的身份？', ['确定', function () {
                 app.main.toggleLogin();
                 app.data.clearUser();
+
+                return true;
             }], ['取消', null]);
         });
 
@@ -539,6 +541,8 @@ app.main.createCategoryDialog = function () {
                         // 是否现在打开类目？
                         app.dialog.build('进入类目', '类目 ' + $.htmlEncode(categoryName) + ' 可以进入了！要现在进入吗？', ['要', function () {
                             app.router.redirect('/category/' + categoryName);
+
+                            return true;
                         }], ['不要', null]);
                     }
                 });
@@ -546,6 +550,8 @@ app.main.createCategoryDialog = function () {
                 app.main.categoryList.refreshList();
             });
             el.remove();
+
+            return true;
         }], ['返回修改']);
     });
 
@@ -769,6 +775,7 @@ app.socket = {
     url: 'ws://' + document.domain + ':51230',
 
     webSocket: null,
+    allowReceiveMsgDanmaku: true,
 
     register: function () {
         this.initConnectGuard();
@@ -826,6 +833,9 @@ app.socket = {
 
         switch (data['type']) {
             case 'danmaku':
+                if ((data['mode'] === 1 || data['mode'] === 2) && !this.allowReceiveMsgDanmaku)
+                    break;
+
                 app.danmaku.make(data['msg'], data['mode'], data['color']);
                 break;
 
@@ -922,7 +932,8 @@ app.danmaku = {
             '<div class="danmaku-send-dialog">' +
             '<span class="zmdi zmdi-close exit-btn"></span>' +
             '<form class="danmaku-send-form" onsubmit="return false;">' +
-            '<span data-toggle="showColorSelector" class="danmaku-style-btn zmdi zmdi-format-color-text"></span>' +
+            '<span data-toggle="showColorSelector" class="danmaku-aciton-btn zmdi zmdi-format-color-text"></span>' +
+            '<span data-toggle="showSettings" class="danmaku-aciton-btn zmdi zmdi-settings"></span>' +
             '<input class="danmaku-msg-input" type="text" placeholder="(～￣▽￣)～ 输入弹幕内容" autocomplete="off">' +
             '<button type="submit" class="danmaku-send-btn">发送 &gt;</button>' +
             '</form>' +
@@ -990,6 +1001,27 @@ app.danmaku = {
         }
 
         setColorBlockItemSelected(colors[0]);
+
+        dialogElem.find('[data-toggle="showSettings"]').click(function () {
+            var settingsElem = $(
+                '<div class="danmaku-settings">' +
+                '<div class="setting-actions">' +
+                '<span data-toggle="display" class="action-btn"><i class="zmdi zmdi-eye"></i> 弹幕显示 / 隐藏</span>' +
+                '</div>' +
+                '</div>'
+            );
+            var displayControlBtn = settingsElem.find('[data-toggle="display"]');
+            var displayControlIco = function () {
+                displayControlBtn.find('i').attr('class', 'zmdi ' + (app.socket.allowReceiveMsgDanmaku ? 'zmdi-eye' : 'zmdi-eye-off'));
+            };
+            displayControlIco();
+            displayControlBtn.click(function () {
+                app.socket.allowReceiveMsgDanmaku = !app.socket.allowReceiveMsgDanmaku;
+                displayControlIco();
+            });
+
+            app.dialog.build('弹幕设置', settingsElem);
+        });
     },
 
     make: function (message, mode, color) {
@@ -1100,23 +1132,25 @@ app.dialog = {
 
             // 确定按钮
             if (!!yesBtn) {
-                var yesOnClick = yesBtn[1] || function () {};
+                var yesOnClick = yesBtn[1] || function () { return true; };
                 var yesBtnText = yesBtn[0] || '确定';
 
                 $('<a class="dialog-btn yes-btn">' + yesBtnText + '</a>').click(function () {
-                    dialogLayerHide();
-                    yesOnClick();
+                    if (yesOnClick()) {
+                        dialogLayerHide();
+                    }
                 }).appendTo(dialogBottomElem);
             }
 
             // 取消按钮
             if (!!cancelBtn) {
                 var cancelBtnText = cancelBtn[0] || '取消';
-                var cancelOnClick = cancelBtn[1] || function () {};
+                var cancelOnClick = cancelBtn[1] || function () { return true; };
 
                 $('<a class="dialog-btn cancel-btn">' + cancelBtnText + '</a>').click(function () {
-                    dialogLayerHide();
-                    cancelOnClick();
+                    if (cancelOnClick()) {
+                        dialogLayerHide();
+                    }
                 }).appendTo(dialogBottomElem);
             }
         } else {
@@ -1131,6 +1165,52 @@ app.dialog = {
         };
 
         return obj;
+    },
+
+    buildInputs: function (title, msg, inputs, yesBtnEvent, cancelBtnEvent) {
+        if (!inputs || !(inputs instanceof Array) || inputs.length <= 0)
+            throw new Error('Parameter \'inputs\' error.');
+        if (!yesBtnEvent)
+            throw new Error('Parameter \'yesBtnEvent\' must be set.');
+        cancelBtnEvent = cancelBtnEvent || function () { return true; };
+
+        var elem = $('<div class="dialog-inputs"></div>');
+
+        if (msg && $.trim(msg).length > 0) {
+            $('<div class="dialog-inputs-msg"></div>').text(msg).appendTo(elem);
+        }
+
+        var inputsWrapElem = $('<div class="dialog-inputs-wrap"></div>').appendTo(elem);
+
+        var inputElems = {};
+        for (var i in inputs) {
+            if (!inputs.hasOwnProperty(i)) continue;
+            var item = inputs[i];
+            var inputElem = $(
+                '<input type="text" class="form-control" spellcheck="false" autocomplete="off" name="" placeholder="">'
+            ).appendTo(inputsWrapElem);
+            for (var key in item) {
+                if (!item.hasOwnProperty(key)) continue;
+                inputElem.attr(key, item[key]);
+            }
+            inputElems[item['name']] = inputElem;
+        }
+
+        var yesBtnEvent2 = function () {
+            var args = {};
+            for (var name in inputElems) {
+                var input = inputElems[name];
+                args[name] = $.trim(input.val());
+            }
+            return yesBtnEvent(args, inputElems);
+        };
+        var cancelBtnEvent2 = function () {
+            return cancelBtnEvent();
+        };
+
+        this.build(title, elem, ['确定', yesBtnEvent2], ['取消', cancelBtnEvent2]);
+
+        return {inputElems: inputElems};
     }
 };
 

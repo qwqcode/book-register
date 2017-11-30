@@ -568,7 +568,7 @@ app.editor.work = function (rawCategoryObj, opts) {
             if (!itemElem || itemElem.length <= 0) return;
 
             var scrollTop = (itemElem.offset().top - bookListContentElem.offset().top);
-            bookListElem.stop(true).animate({scrollTop: scrollTop}, 150);
+            bookListElem.stop(true).animate({scrollTop: scrollTop}, 150, 'linear');
             // bookListElem.stop(true).scrollTop(scrollTop);
         };
     })();

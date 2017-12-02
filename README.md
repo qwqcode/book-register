@@ -58,16 +58,19 @@ MIT
 
 # Screenshots
 
-### 2017-11-11
+### Latest
 <p align="center">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/login.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/category_list.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/danmaku.gif">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/editor.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/inserter.gif">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/autocomplete.gif">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/ranking.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-11-11/socket-func.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/login.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/category_list.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/danmaku.gif">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/editor.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/inserter.gif">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/autocomplete.gif">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/editor-help.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/danmaku-input.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/danmaku-input-2.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/ranking.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/socket-func.png">
 </p>
 
 ### 2017-10-28

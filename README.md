@@ -14,17 +14,18 @@
 
 # Features
 - 美观友好的 UI
-- 快速上手，简单的操作
-- 多人协作，多人完成同一类目
-- 实时弹幕，可以隐藏
-- 在线监测，显示不活跃成员
-- 自动填充，快速输入
-- 数据统计，分析成员战绩
+- 快速上手 简单的操作
+- 多人协作 多人完成同一类目
+- 实时弹幕 全局显示用户动作
+- 在线监测 不活跃成员查看
+- 自动补全 快速输入
+- 数据统计 成员战绩分析
 - 导出 所有/单个 类目为一整个 .xls 文件
 - 带 API, 运用 AJAX, Web Socket...
 
 # Requirements
 - [PHP](http://www.php.net/) >= 7.0
+	- [Lumen](https://github.com/laravel/lumen)
 - [NodeJS](http://nodejs.cn/)
     - [ws](https://github.com/websockets/ws)
 

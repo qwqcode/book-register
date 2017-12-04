@@ -98,7 +98,7 @@ class Controller extends BaseController
     private $withHeaders = [
         'X-Project-Link' => QWQ_PROJECT_LINK,
         'X-Author-Link' => QWQ_AUTHOR_LINK,
-        'Access-Control-Allow-Origin' => '*'
+        //'Access-Control-Allow-Origin' => '*'
     ];
     
     /**

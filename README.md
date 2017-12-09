@@ -70,6 +70,7 @@ MIT
 <img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/danmaku-input.png">
 <img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/danmaku-input-2.png">
 <img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/ranking.png">
+<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/excel.png">
 <img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/socket-func.png">
 </p>
 

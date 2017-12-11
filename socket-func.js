@@ -9,7 +9,7 @@ var conf = {
 
 // 管理员密码
 var adminPassword = process.env.ADMIN_PASSWORD;
-console.log(adminPassword);
+
 // 实例化
 var wss = new ws.Server(conf);
 

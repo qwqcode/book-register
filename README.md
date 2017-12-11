@@ -41,8 +41,8 @@ php artisan key:generate
 php artisan migrate
 
 # 实时弹幕必须
+nmp install
 node socket-func
-npm i ws --save
 
 # DEV
 php -S localhost:8000 -t public

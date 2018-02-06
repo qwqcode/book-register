@@ -9,7 +9,7 @@
             "homepage": "http://www.qwqaq.com/"
         }
     ],
-    "license": "MIT",
+    "license": "GPL-3.0",
     "type": "project",
     "require": {
         "php": ">=7.0",

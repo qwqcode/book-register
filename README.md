@@ -12,6 +12,8 @@
 
 采用 PHP, Lumen Framework, NodeJS, WebSocket, ...
 
+> 本项目使用 GPL3.0 开源协议，未经允许代码和衍生品不得用于商业用途，侵权必究
+
 # Features
 - 美观友好的 UI
 - 快速上手 简单的操作
@@ -50,11 +52,11 @@ php -S localhost:8000 -t public
 
 > P.S. Windows Server 可下载 [NSSM](http://nssm.cc) 后执行项目中的 `socket-func-install.bat` 让 `node socket-func ` 持久运作
 
-# License
-MIT
-
 # Author
 [ZNEIAT](http://www.qwqaq.com)
+
+# License
+[書記](https://github.com/Zneiat/book-register) Copyright (C) 2018 [Zneiat](http://www.qwqaq.com "Author Blog")
 
 # Screenshots
 

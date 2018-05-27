@@ -61,6 +61,8 @@ If you are enjoying this app, please consider making a donation to keep it alive
 | :------: | :------: | 
 | <img width="150" src="./docs/donate/alipay.png"> | <img width="150" src="./docs/donate/wechat.png"> | 
 
+捐赠者的名字将保存于 [捐赠者列表](https://github.com/Zneiat/donate-qwqaq)，非常感谢你们的支持
+
 # Author
 [ZNEIAT](http://www.qwqaq.com)
 

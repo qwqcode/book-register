@@ -1,6 +1,6 @@
 # Book Register
 
-<p align="center"><img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/logo.png"></p>
+<p align="center"><img src="./docs/logo.png"></p>
 
 書記 是一个适用于学校图书室 多人协作共同完成图书录入任务 的在线工作站
 
@@ -52,6 +52,15 @@ php -S localhost:8000 -t public
 
 > P.S. Windows Server 可下载 [NSSM](http://nssm.cc) 后执行项目中的 `socket-func-install.bat` 让 `node socket-func ` 持久运作
 
+# Donate
+如果您觉得我的项目对您有帮助，并且您愿意给予我一点小小的支持，您可以通过以下方式向我捐赠，这样可以维持项目持续地发展，非常感谢！ヽ(•̀ω•́ )ゝ
+
+If you are enjoying this app, please consider making a donation to keep it alive.
+
+| Alipay | Wechat | 
+| :------: | :------: | 
+| <img width="150" src="./docs/donate/alipay.png"> | <img width="150" src="./docs/donate/wechat.png"> | 
+
 # Author
 [ZNEIAT](http://www.qwqaq.com)
 
@@ -62,34 +71,34 @@ php -S localhost:8000 -t public
 
 ### Latest
 <p align="center">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/login.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/category_list.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/danmaku.gif">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/editor.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/inserter.gif">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/autocomplete.gif">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/editor-help.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/danmaku-input.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/danmaku-input-2.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/ranking.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/excel.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/latest/socket-func.png">
+<img src="./docs/screenshots/latest/login.png">
+<img src="./docs/screenshots/latest/category_list.png">
+<img src="./docs/screenshots/latest/danmaku.gif">
+<img src="./docs/screenshots/latest/editor.png">
+<img src="./docs/screenshots/latest/inserter.gif">
+<img src="./docs/screenshots/latest/autocomplete.gif">
+<img src="./docs/screenshots/latest/editor-help.png">
+<img src="./docs/screenshots/latest/danmaku-input.png">
+<img src="./docs/screenshots/latest/danmaku-input-2.png">
+<img src="./docs/screenshots/latest/ranking.png">
+<img src="./docs/screenshots/latest/excel.png">
+<img src="./docs/screenshots/latest/socket-func.png">
 </p>
 
 ### 2017-10-28
 <p align="center">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-28-1.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-28-2.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-28-3.png">
+<img src="./docs/screenshots/2017-10-28-1.png">
+<img src="./docs/screenshots/2017-10-28-2.png">
+<img src="./docs/screenshots/2017-10-28-3.png">
 </p>
 
 ### 2017-10-23
 <p align="center">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-23-1.png">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-23-2.png">
+<img src="./docs/screenshots/2017-10-23-1.png">
+<img src="./docs/screenshots/2017-10-23-2.png">
 </p>
 
 ### 2017-10-6
 <p align="center">
-<img src="https://raw.githubusercontent.com/Zneiat/book-register/master/docs/screenshots/2017-10-6-1.png">
+<img src="./docs/screenshots/2017-10-6-1.png">
 </p>

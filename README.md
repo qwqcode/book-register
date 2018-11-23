@@ -29,9 +29,11 @@
 
 # 环境要求
 - [PHP](http://www.php.net/) >= 7.0
+    - 依赖管理：[Composer](https://getcomposer.org/)
 	- 引用：[Lumen](https://github.com/laravel/lumen)
 - [NodeJS](http://nodejs.cn/)
     - 引用：[ws](https://github.com/websockets/ws)
+- MySql
 
 # 快速部署
 ```sh
@@ -58,26 +60,26 @@ php -S localhost:8000 -t public
 
 | 路径 | 描述 |
 | :------: | :------: |
-| /public/js | 存放 JS 代码文件 |
-| /public/js/app.js | 实现前端 所有主要功能 |
-| /public/js/editor.js | 实现前端 类目编辑器 功能 |
-| /public/js/app-help.js | 实现前端 操作提示 功能 |
-| /public/css | 存放 CSS 代码文件 |
-| /public/css/app.css | 前端界面样式表 |
-| /resources/views/index.blade.php | 总视图文件 |
+| [/public/js](/public/js) | 存放 JS 代码文件 |
+| [/public/js/app.js](/public/js/app.js) | 实现前端 所有主要功能 |
+| [/public/js/editor.js](/public/js/editor.js) | 实现前端 类目编辑器 功能 |
+| [/public/js/app-help.js](/public/js/app-help.js) | 实现前端 操作提示 功能 |
+| [/public/css](/public/css) | 存放 CSS 代码文件 |
+| [/public/css/app.css](/public/css/app.css) | 前端界面样式表 |
+| [/resources/views/index.blade.php](/resources/views/index.blade.php) | 总视图文件 |
 
 
 ## 后端
 
 | 路径 | 描述 |
 | :------: | :------: |
-| /.env | 配置文件（数据库，密码相关） |
-| /app/Http/Controllers | 控制器存放目录 |
-| /app/Http/Controllers/ApiController.php | 所有 Api 逻辑 |
-| /socket-func.js | 弹幕服务器 相关代码 |
-| /socket-func-install.bat | 弹幕服务器 一键安装脚本 |
-| /socket-func-restart.bat | 弹幕服务器 一键重启脚本 |
-| /database/migrations | 存放数据表结构相关 |
+| [/.env](/.env.example) | 配置文件（数据库，密码相关） |
+| [/app/Http/Controllers](/app/Http/Controllers) | 控制器存放目录 |
+| [/app/Http/Controllers/ApiController.php](/app/Http/Controllers/ApiController.php) | 所有 Api 逻辑 |
+| [/socket-func.js](/socket-func.js) | 弹幕服务器 相关代码 |
+| [/socket-func-install.bat](/socket-func-install.bat) | 弹幕服务器 一键安装脚本 |
+| [/socket-func-restart.bat](/socket-func-restart.bat) | 弹幕服务器 一键重启脚本 |
+| [/database/migrations](/database/migrations) | 存放数据表结构相关 |
 
 # 截图
 

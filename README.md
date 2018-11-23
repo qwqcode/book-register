@@ -29,11 +29,9 @@
 
 # 环境要求
 - [PHP](http://www.php.net/) >= 7.0
-    - 依赖管理：[Composer](https://getcomposer.org/)
-	- 引用：[Lumen](https://github.com/laravel/lumen)
+	- PHP 环境配置参考：[Lumen](https://laravel-china.org/docs/lumen/5.5/install/1899)
 - [NodeJS](http://nodejs.cn/)
-    - 引用：[ws](https://github.com/websockets/ws)
-- MySql
+- [MySql](https://www.mysql.com/)
 
 # 快速部署
 ```sh

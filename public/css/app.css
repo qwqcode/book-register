@@ -7,6 +7,7 @@ body {
     color: #535f6f;
     background-color: #f5f8fb;
     min-width: 1200px;
+    overflow: hidden;
 }
 
 a {
@@ -184,6 +185,7 @@ a {
 .main.large-size {
     width: 100%;
     height: 100%;
+    overflow-y: scroll;
 }
 
 /* main-login */

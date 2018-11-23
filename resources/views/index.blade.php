@@ -32,7 +32,7 @@
         <!-- Main Login -->
         <div class="main-login">
             <div class="main-login-head">
-                <a class="big-title" href="https://github.com/Zneiat/book-register" target="_blank">
+                <a class="big-title" href="https://github.com/qwqcode/book-register" target="_blank">
                     <span class="project-name">書記</span><span class="version-info">Online</span>
                 </a>
             </div>

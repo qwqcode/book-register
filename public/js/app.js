@@ -1,4 +1,4 @@
-/* Zneiat/book-register */
+/* qwqcode/book-register */
 "use strict";
 
 $(document).ready(function () {
@@ -21,8 +21,8 @@ $(document).ready(function () {
 });
 
 var app = {
-    PROJECT_LINK: 'https://github.com/Zneiat/book-register',
-    AUTHOR_LINK: 'https://github.com/Zneiat',
+    PROJECT_LINK: 'https://github.com/qwqcode/book-register',
+    AUTHOR_LINK: 'https://github.com/qwqcode',
 
     // 浏览器环境要求
     checkRequirements: function () {

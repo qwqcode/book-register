@@ -19,7 +19,7 @@ class ApiController extends Controller
     public function index(Request $request)
     {
         if ($request->wantsJson())
-            return $this->success('Hello Zneiat/book-register API');
+            return $this->success('Hello qwqcode/book-register API');
         
         return view('index');
     }
@@ -396,12 +396,12 @@ class ApiController extends Controller
         \Excel::create($title, function($excel) use ($title, $data) {
             $excel->setTitle($title);
             
-            $excel->setCreator('ZNEIAT')
-                ->setLastModifiedBy('ZNEIAT')
-                ->setSubject('zneiat/book-register CategoryExcel')
-                ->setKeywords('books, zneiat')
-                ->setCompany('ZNEIAT')
-                ->setDescription('zneiat/book-register Automatic Generated.');
+            $excel->setCreator('qwqcode')
+                ->setLastModifiedBy('qwqcode')
+                ->setSubject('qwqcode/book-register CategoryExcel')
+                ->setKeywords('books, qwqcode')
+                ->setCompany('qwqcode')
+                ->setDescription('qwqcode/book-register Automatic Generated.');
             
             $excel->sheet('全部类目', function($sheet) use ($data) {
     

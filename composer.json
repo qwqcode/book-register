@@ -1,10 +1,10 @@
 {
-    "name": "zneiat/book-register",
+    "name": "qwqcode/book-register",
     "description": "The Library book Registration Platform",
     "keywords": ["book", "register", "library"],
 	"authors": [
         {
-            "name": "ZNEIAT",
+            "name": "qwqcode",
             "email": "zneiat@qq.com",
             "homepage": "http://www.qwqaq.com/"
         }
@@ -37,7 +37,10 @@
     "scripts": {
         "post-root-package-install": [
             "php -r \"copy('.env.example', '.env');\""
-        ]
+        ],
+		"post-install-cmd": [
+			"php -r \"copy('.env.example', '.env');\""
+		]
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

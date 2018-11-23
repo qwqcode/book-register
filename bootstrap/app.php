@@ -101,7 +101,7 @@ $app->router->group([
     require __DIR__.'/../routes/web.php';
 });
 
-define('QWQ_PROJECT_LINK', 'https://github.com/Zneiat/book-register');
-define('QWQ_AUTHOR_LINK', 'https://github.com/Zneiat');
+define('QWQ_PROJECT_LINK', 'https://github.com/qwqcode/book-register');
+define('QWQ_AUTHOR_LINK', 'https://github.com/qwqcode');
 
 return $app;

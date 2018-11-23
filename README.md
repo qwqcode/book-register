@@ -8,37 +8,37 @@
 
 数据字段包含 `类目名` `编号` `书名` `出版社` `备注`
 
-> 旨在完成图书室书籍录入任务... 做做项目练练手 (￣▽￣")
+采用 PHP, Lumen Framework, NodeJS, WebSocket, jQuery, CSS3...
 
-采用 PHP, Lumen Framework, NodeJS, WebSocket, ...
+> 未经允许代码和衍生品不得用于商业用途，侵权必究
 
-> 本项目使用 GPL3.0 开源协议，未经允许代码和衍生品不得用于商业用途，侵权必究
-
-# Features
-- 美观友好的 UI
+# 特性
+- 美观友好的 UI，Material Design
 - 快速上手 简单的操作
 - 多人协作 多人完成同一类目
 - 实时弹幕 全局显示用户动作
 - 在线监测 不活跃成员查看
-- 自动补全 快速输入
+- 自动补全 快速输入，快速定位，类似 Excel
 - 数据统计 成员战绩分析
+- 编辑器 操作提示
+- 编辑器 数据实时更新，本地保存
 - 导出 所有/单个 类目为一整个 .xls 文件
-- 带 API, 运用 AJAX, Web Socket...
+- 快速检索功能
+- 有 API，可供第三方接入
+- 运用 AJAX, Web Socket 等技术优化用户体验
 
-# Requirements
+# 环境要求
 - [PHP](http://www.php.net/) >= 7.0
-	- [Lumen](https://github.com/laravel/lumen)
+	- 引用：[Lumen](https://github.com/laravel/lumen)
 - [NodeJS](http://nodejs.cn/)
-    - [ws](https://github.com/websockets/ws)
+    - 引用：[ws](https://github.com/websockets/ws)
 
-# Quick Start
+# 快速部署
 ```sh
-git clone https://github.com/Zneiat/book-register.git
+git clone https://github.com/qwqcode/book-register.git
 composer install
 
-php -r "copy('.env.example', '.env');"
-# 然后到 .env 里配置数据库连接
-
+# 然后到 .env 里配置数据库连接，并执行：
 php artisan key:generate
 php artisan migrate
 
@@ -46,32 +46,41 @@ php artisan migrate
 nmp install
 node socket-func
 
-# DEV
+# 简易开发环境
 php -S localhost:8000 -t public
 ```
 
 > P.S. Windows Server 可下载 [NSSM](http://nssm.cc) 后执行项目中的 `socket-func-install.bat` 让 `node socket-func ` 持久运作
 
-# Donate
-如果您觉得我的项目对您有帮助，并且您愿意给予我一点小小的支持，您可以通过以下方式向我捐赠，这样可以维持项目持续地发展，非常感谢！ヽ(•̀ω•́ )ゝ
+# 目录结构
 
-If you are enjoying this app, please consider making a donation to keep it alive.
+## 前端
 
-| Alipay | Wechat | 
-| :------: | :------: | 
-| <img width="150" src="./docs/donate/alipay.png"> | <img width="150" src="./docs/donate/wechat.png"> | 
+| 路径 | 描述 |
+| :------: | :------: |
+| /public/js | 存放 JS 代码文件 |
+| /public/js/app.js | 实现前端 所有主要功能 |
+| /public/js/editor.js | 实现前端 类目编辑器 功能 |
+| /public/js/app-help.js | 实现前端 操作提示 功能 |
+| /public/css | 存放 CSS 代码文件 |
+| /public/css/app.css | 前端界面样式表 |
+| /resources/views/index.blade.php | 总视图文件 |
 
-捐赠者的名字将保存于 [捐赠者列表](https://github.com/Zneiat/donate-qwqaq)，非常感谢你们的支持
 
-# Author
-[ZNEIAT](http://www.qwqaq.com)
+## 后端
 
-# License
-[書記](https://github.com/Zneiat/book-register) Copyright (C) 2018 [Zneiat](http://www.qwqaq.com "Author Blog")
+| 路径 | 描述 |
+| :------: | :------: |
+| /.env | 配置文件（数据库，密码相关） |
+| /app/Http/Controllers | 控制器存放目录 |
+| /app/Http/Controllers/ApiController.php | 所有 Api 逻辑 |
+| /socket-func.js | 弹幕服务器 相关代码 |
+| /socket-func-install.bat | 弹幕服务器 一键安装脚本 |
+| /socket-func-restart.bat | 弹幕服务器 一键重启脚本 |
+| /database/migrations | 存放数据表结构相关 |
 
-# Screenshots
+# 截图
 
-### Latest
 <p align="center">
 <img src="./docs/screenshots/latest/login.png">
 <img src="./docs/screenshots/latest/category_list.png">
@@ -87,20 +96,19 @@ If you are enjoying this app, please consider making a donation to keep it alive
 <img src="./docs/screenshots/latest/socket-func.png">
 </p>
 
-### 2017-10-28
-<p align="center">
-<img src="./docs/screenshots/2017-10-28-1.png">
-<img src="./docs/screenshots/2017-10-28-2.png">
-<img src="./docs/screenshots/2017-10-28-3.png">
-</p>
+[历史版本截图](./docs/history.md)
 
-### 2017-10-23
-<p align="center">
-<img src="./docs/screenshots/2017-10-23-1.png">
-<img src="./docs/screenshots/2017-10-23-2.png">
-</p>
+# 版权
 
-### 2017-10-6
-<p align="center">
-<img src="./docs/screenshots/2017-10-6-1.png">
-</p>
+[書記](https://github.com/qwqcode/book-register) Copyright (C) 2018 [QWQCODE](http://www.qwqaq.com "Author Blog")
+
+# 捐助
+如果您觉得我的项目对您有帮助，并且您愿意给予我一点小小的支持，您可以通过以下方式向我捐赠，这样可以维持项目持续地发展，非常感谢！ヽ(•̀ω•́ )ゝ
+
+If you are enjoying this app, please consider making a donation to keep it alive.
+
+| Alipay | Wechat | 
+| :------: | :------: | 
+| <img width="150" src="./docs/donate/alipay.png"> | <img width="150" src="./docs/donate/wechat.png"> | 
+
+捐赠者的名字将保存于 [捐赠者列表](https://github.com/qwqcode/donate-qwqaq)，非常感谢你们的支持

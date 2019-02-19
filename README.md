@@ -12,6 +12,8 @@
 
 > 未经允许代码和衍生品不得用于商业用途，侵权必究
 
+另外，也有 Android 移动版，您可以在手机上完成工作 [传送门](https://github.com/qwqcode/library-register-android)
+
 # 特性
 - 美观友好的 UI，Material Design
 - 快速上手 简单的操作

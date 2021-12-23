@@ -809,7 +809,7 @@ app.api = {
 };
 
 app.socket = {
-    url: 'ws://' + document.domain + ':51230',
+    url: 'ws://' + location.host + '/ws/',
 
     webSocket: null,
 

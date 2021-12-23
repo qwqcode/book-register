@@ -1,0 +1,48 @@
+version: '3'
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        user: www
+        uid: 1000
+    image: book-register
+    restart: unless-stopped
+    working_dir: /var/www
+    tty: true
+    volumes:
+      - ./:/var/www
+      - ./docker/php-local.ini:/usr/local/etc/php/conf.d/local.ini
+
+  db:
+    image: mysql:5.7
+    restart: unless-stopped
+    ports:
+      - 58711:3306
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./docker/mysql.cnf:/etc/mysql/my.cnf
+      - ./docker/initdb.d/:/docker-entrypoint-initdb.d/
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - 58710:80
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
+
+  ws:
+    build:
+      context: ./
+      dockerfile: Dockerfile.ws
+    image: book-register-ws
+    restart: unless-stopped

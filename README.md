@@ -30,12 +30,71 @@
 - 运用 AJAX, Web Socket 等技术优化用户体验
 
 # 环境要求
-- [PHP](http://www.php.net/) >= 7.0
-	- PHP 环境配置参考：[Lumen](https://laravel-china.org/docs/lumen/5.5/install/1899)
+- [PHP](http://www.php.net/) 7.2 (参考：[Lumen 5.5](https://laravel-china.org/docs/lumen/5.5/install/1899))
 - [NodeJS](http://nodejs.cn/)
 - [MySql](https://www.mysql.com/)
 
 # 快速部署
+
+### Docker
+
+**1. 配置文件**
+
+```sh
+cp .env.example .env
+vim .env
+```
+
+**1. 启动**
+
+```sh
+docker-compose up -d
+```
+
+|服务|地址|
+|-|-|
+| Nginx | `http://localhost:58711` |
+| 数据库 | `localhost:58712` |
+
+通过 `docker-compose ps` 检查运行状态
+
+**2. 安装依赖**
+
+```sh
+docker-compose exec app composer install
+```
+
+也可以直接解压：`tar -xf vendor.tar.xz`
+
+**3. 生成随机 APP Key**
+
+```sh
+docker-compose exec app php artisan key:generate
+```
+
+#### 其他操作
+
+**卸载**
+
+```
+docker-compose down
+```
+
+**暂停**
+
+```sh
+docker-compose pause
+docker-compose unpause
+```
+
+**Bash**
+
+```sh
+docker-compose exec app bash
+```
+
+### 普通方式
+
 ```sh
 git clone https://github.com/qwqcode/book-register.git
 composer install
@@ -95,7 +154,6 @@ php -S localhost:8000 -t public
 <img src="./docs/screenshots/latest/danmaku-input-2.png">
 <img src="./docs/screenshots/latest/ranking.png">
 <img src="./docs/screenshots/latest/excel.png">
-<img src="./docs/screenshots/latest/socket-func.png">
 </p>
 
 [历史版本截图](./docs/history.md)
@@ -104,13 +162,3 @@ php -S localhost:8000 -t public
 
 [書記](https://github.com/qwqcode/book-register) Copyright (C) 2018 [QWQCODE](http://www.qwqaq.com "Author Blog")
 
-# 捐助
-如果您觉得我的项目对您有帮助，并且您愿意给予我一点小小的支持，您可以通过以下方式向我捐赠，这样可以维持项目持续地发展，非常感谢！ヽ(•̀ω•́ )ゝ
-
-If you are enjoying this app, please consider making a donation to keep it alive.
-
-| Alipay | Wechat | 
-| :------: | :------: | 
-| <img width="150" src="./docs/donate/alipay.png"> | <img width="150" src="./docs/donate/wechat.png"> | 
-
-捐赠者的名字将保存于 [捐赠者列表](https://github.com/qwqcode/donate-qwqaq)，非常感谢你们的支持

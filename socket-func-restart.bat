@@ -1,6 +1,6 @@
 @echo off
 
-nssm restart ZneiatLrSocketFunc
+nssm restart BookRegisterWS
 
 IF %ERRORLEVEL% NEQ 0 GOTO ERROR
 EXIT
